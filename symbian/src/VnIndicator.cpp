@@ -1,4 +1,8 @@
 #include <aknutils.h>
+#include <aknsconstants.h>
+#include <aknsdrawutils.h>
+#include <aknsutils.h>
+#include <eikbtgpc.h>
 #include <eikenv.h>
 #include <gdi.h>
 #include "VnIndicator.h"
@@ -14,13 +18,19 @@ _LIT(KNameSignal, "signal");
 _LIT(KNameNavi, "navi");
 _LIT(KNameTitle, "title");
 _LIT(KNameContext, "context");
+_LIT(KBarFmt, " | bar %d,%d-%d,%d");
+_LIT(KNoBar, " | no bar");
 
 const TInt KPadding = 2;
 const TInt KGap = 2;
-// Macros, not TRgb constants: nothing here depends on static constructors being run.
-#define KColourV    TRgb(0x00, 0x60, 0xC0)
-#define KColourE    TRgb(0x60, 0x60, 0x60)
-#define KColourText TRgb(0xFF, 0xFF, 0xFF)
+
+// The bar at the bottom of the screen (softkeys, and on the E72 the indicators and the
+// clock), or NULL.
+static CCoeControl* BottomBar()
+    {
+    CEikButtonGroupContainer* cba = CEikButtonGroupContainer::Current();
+    return cba && cba->ButtonGroup() ? cba->ButtonGroup()->AsControl() : NULL;
+    }
 
 CVnIndicator* CVnIndicator::NewL()
     {
@@ -114,22 +124,62 @@ void CVnIndicator::Layout()
     SetExtent(TPoint(Max(x, 0), Max(y, 0)), TSize(width, h));
     }
 
+// The part of the bar's skin background that this window covers, drawn with the bar's
+// own control context, so that it matches whatever skin and layout the phone has. EFalse
+// when the window is not over the bar or the bar has no skin background.
+TBool CVnIndicator::DrawBarBackground(CWindowGc& aGc) const
+    {
+    MAknsSkinInstance* skin = AknsUtils::SkinInstance();
+    CCoeControl* bar = BottomBar();
+    if (!skin || !bar)
+        {
+        return EFalse;
+        }
+    MAknsControlContext* cc = AknsDrawUtils::ControlContext(bar);
+    const TRect barRect(bar->PositionRelativeToScreen(), bar->Size());
+    TRect mine(PositionRelativeToScreen(), Size());
+    if (!cc || !barRect.Contains(mine.iTl) || !barRect.Contains(mine.iBr - TPoint(1, 1)))
+        {
+        return EFalse;
+        }
+    mine.Move(-barRect.iTl.iX, -barRect.iTl.iY); // in the bar's coordinates
+    return AknsDrawUtils::DrawBackground(skin, cc, bar, aGc, TPoint(0, 0), mine,
+                                         KAknsDrawParamDefault);
+    }
+
 void CVnIndicator::Draw(const TRect& /*aRect*/) const
     {
     CWindowGc& gc = SystemGc();
     const TRect rect(Rect());
-    gc.SetPenStyle(CGraphicsContext::ENullPen);
-    gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-    gc.SetBrushColor(iVietnamese ? KColourV : KColourE);
-    gc.DrawRect(rect);
+    if (!DrawBarBackground(gc))
+        {
+        gc.SetPenStyle(CGraphicsContext::ENullPen);
+        gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+        gc.SetBrushColor(KRgbBlack);
+        gc.DrawRect(rect);
+        }
+    // the colour of the universal indicator pane's icons, as the memory card's
+    TRgb colour(KRgbWhite);
+    AknsUtils::GetCachedColor(AknsUtils::SkinInstance(), colour, KAknsIIDQsnIconColors,
+                              EAknsCIQsnIconColorsCG2);
     gc.SetBrushStyle(CGraphicsContext::ENullBrush);
     gc.SetPenStyle(CGraphicsContext::ESolidPen);
-    gc.SetPenColor(KColourText);
+    gc.SetPenColor(colour);
+    gc.DrawRoundRect(rect, TSize(2, 2));
     const CFont* font = CEikonEnv::Static()->DenseFont();
     gc.UseFont(font);
     const TInt baseline = (rect.Height() - font->HeightInPixels()) / 2 + font->AscentInPixels();
     gc.DrawText(iVietnamese ? KMarkV : KMarkE, rect, baseline, CGraphicsContext::ECenter, 0);
     gc.DiscardFont();
+    }
+
+void CVnIndicator::HandleResourceChange(TInt aType)
+    {
+    CCoeControl::HandleResourceChange(aType);
+    if (aType == KAknsMessageSkinChange)
+        {
+        DrawDeferred(); // a new skin: new background and colour
+        }
     }
 
 static void AppendRect(TDes& aLine, const TDesC& aName, AknLayoutUtils::TAknLayoutMetrics aPane)
@@ -153,4 +203,14 @@ void CVnIndicator::Describe(TDes& aLine) const
     AppendRect(aLine, KNameNavi, AknLayoutUtils::ENaviPane);
     AppendRect(aLine, KNameTitle, AknLayoutUtils::ETitlePane);
     AppendRect(aLine, KNameContext, AknLayoutUtils::EContextPane);
+    const CCoeControl* bar = BottomBar();
+    if (!bar)
+        {
+        aLine.Append(KNoBar);
+        }
+    else if (aLine.Length() + 40 < aLine.MaxLength())
+        {
+        const TRect r(bar->PositionRelativeToScreen(), bar->Size());
+        aLine.AppendFormat(KBarFmt, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY);
+        }
     }

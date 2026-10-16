@@ -1,27 +1,18 @@
 #!/usr/bin/env bash
-# Puts the package that docker-build.sh made on the web for the phone's browser:
-# vnkey-<version>.sisx and a plain page that links it, in VNKEY_DL_DIR on the ssh host
-# VNKEY_DL_SSH (symbian/build.local). That is meant to be the folder vnkey/ inside the one
-# where OttPilot's publish.sh puts its packages: OttPilot's nginx serves it at
-# http://<host>/s60/vnkey/, with the type application/vnd.symbian.install that makes the
-# S60 browser hand a .sisx to the installer (OttPilot's server/deploy/README.md,
-# "Downloads for the phone"). The script refuses a folder with OttPilot's packages in it,
-# whose index.html it would replace. A file name has the version in it, so the browser
-# never gets an old one from its cache; packages published before stay there.
+# Serves the package that docker-build.sh made to the phone's browser from this machine,
+# on the local network only: copies it into symbian/web/ (git-ignored) as
+# vnkey-<version>.sisx with a plain page that links it, and runs the web stub
+# (webstub.py) on that folder over plain HTTP, port VNKEY_WEB_PORT (default 8060). The
+# phone, on the same Wi-Fi, opens the address this prints. Nothing is uploaded anywhere.
+# The stub also takes the phone's log (VnKey's Options > Send log, or its /upload page)
+# into logs/ of the repository.
+# A file name has the version in it, so the browser never installs an old one from its
+# cache; packages served before stay in the folder. Ctrl+C stops the stub. When the port
+# is in use already (the stub of an earlier run), only the files are renewed.
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
-if [ -f "$repo/symbian/build.local" ]; then
-    # shellcheck disable=SC1091
-    . "$repo/symbian/build.local"
-fi
-: "${VNKEY_DL_SSH:?set VNKEY_DL_SSH in symbian/build.local}"
-: "${VNKEY_DL_DIR:?set VNKEY_DL_DIR in symbian/build.local}"
-if [[ $VNKEY_DL_DIR == *\'* ]]; then
-    echo "publish.sh: VNKEY_DL_DIR must not contain a quote" >&2
-    exit 1
-fi
-
+port="${VNKEY_WEB_PORT:-8060}"
 version="$(tr -d '\r\n' < "$repo/symbian/VERSION")"
 sis="$repo/symbian/sis/vnkey.sisx"
 if [ ! -f "$sis" ]; then
@@ -29,20 +20,15 @@ if [ ! -f "$sis" ]; then
     exit 1
 fi
 
-if ssh "$VNKEY_DL_SSH" "ls '$VNKEY_DL_DIR'/ottpilot-*.sisx" >/dev/null 2>&1; then
-    echo "publish.sh: $VNKEY_DL_DIR has OttPilot's packages; use a folder of VnKey's own (e.g. .../vnkey)" >&2
-    exit 1
-fi
-
-stage="$(mktemp -d)"
-trap 'rm -rf "$stage"' EXIT
+web="$repo/symbian/web"
+mkdir -p "$web"
 name="vnkey-$version.sisx"
-cp "$sis" "$stage/$name"
-kb=$(( ($(wc -c < "$stage/$name") + 1023) / 1024 ))
+cp "$sis" "$web/$name"
+kb=$(( ($(wc -c < "$web/$name") + 1023) / 1024 ))
 when="$(date '+%Y-%m-%d %H:%M')"
 
 # HTML 4 with no script and no style sheet: the S60 3rd browser shows it as it is.
-cat > "$stage/index.html" <<EOF
+cat > "$web/index.html" <<EOF
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
 <head>
@@ -56,11 +42,22 @@ cat > "$stage/index.html" <<EOF
 <p><a href="$name">Install</a><br>
 $name, $kb KB</p>
 <p>App manager: Software installation = All.</p>
+<p><a href="/upload">Send a log</a> (or Options &gt; Send log in VnKey)</p>
 </body>
 </html>
 EOF
 
-ssh "$VNKEY_DL_SSH" "mkdir -p '$VNKEY_DL_DIR'"
-scp -q "$stage/$name" "$stage/index.html" "$VNKEY_DL_SSH:$VNKEY_DL_DIR/"
-echo "Published VnKey $version to $VNKEY_DL_SSH:$VNKEY_DL_DIR"
-echo "On the phone: http://<host>/s60/vnkey/"
+# shellcheck source=lan.sh
+. "$repo/symbian/group/lan.sh"
+ip="$(lan_ip || true)"
+
+url="http://${ip:-<LAN address of this Mac>}:$port/"
+
+# A stub from an earlier run still serving the folder sees the new files at once.
+if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "VnKey $version: port $port is already served (the stub from before); the page now offers $name"
+    echo "On the phone: $url"
+    exit 0
+fi
+echo "VnKey $version: on the phone open $url"
+exec python3 -I "$repo/symbian/group/webstub.py" "$web" "$port" "$repo/logs"

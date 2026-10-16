@@ -3,13 +3,22 @@
 Telex typing like Unikey on Windows, for Khoi's Nokia E72: S60 3rd Edition Feature
 Pack 2, Symbian OS 9.3, a QWERTY keyboard, a 320x240 screen. The phone is hacked
 (InstallServer and Open4All patches), so a self-signed package may carry any
-capability. Khoi runs every test on the phone; text is hard to copy off it, so the app
-writes a log to the memory card that Khoi copies over USB (`docs/TESTING.md`). The
+capability. Khoi runs every test on the phone. Files cannot be copied off it by cable or Bluetooth,
+so the app writes a log to the memory card and sends it over the Wi-Fi to the web stub
+on the Mac, which saves it in `logs/` (`docs/TESTING.md`). The
 model for building S60v3 apps is Khoi's OttPilot (`/Users/khoi/Projects/ottpilot`,
 its `symbian/CLAUDE.md`); this project copies its build setup and its Symbian rules.
 
-Where it stands (2026-10-16): app 0.0.1 is the probe of roadmap 1, built, not yet run
-on the phone. The Telex engine passes its tests on the Mac.
+Where it stands (2026-10-16): roadmap 1, the probe, is done; next is roadmap 2, the
+system-wide plugin. On the E72 (logs of 0.0.1 to 0.0.4 in `logs/`): rewrite method 1
+rewrote every word right (68 of 68), among them the restore (tẽt → text, ưindow →
+window) and the shortcuts; the phone's capital at a sentence's start is kept; Ctrl+Space
+switches; the indicator's place 1, in the bottom bar next to the phone's own icons and
+clock, is the one Khoi wants. The letters on the phone keypad's keys broke words in 0.0.1
+(see "Design"), fixed in 0.0.2. The phone has one FEP plugin, AknFEP `0x101FD65A` in ROM;
+VnKey loaded it and had it make a second FEP object, which it deleted again, and went on
+working (FEP checks 2 and 3, 0.0.4). Options > Send log works. App 0.0.5 draws the
+indicator like the phone's icons (Khoi: "the same as memory card style"); not yet seen.
 
 ## Requirements
 
@@ -51,11 +60,20 @@ above AknFep, so it sees every key first, and it never takes a letter away from 
 2. AknFep types the letter, with its case, Fn layer and the rest.
 3. After AknFep has handled the release of the key (an async callback queued at the up
    event, or the next key's down event, whichever comes first), the catcher checks that
-   the editor holds exactly the old word plus one letter that matches the key, gives
-   both to the engine and rewrites the word in place. A long press (repeats) is
-   AknFep's: no rewrite.
-4. A key that ends a word (space, digit, punctuation, Enter) gets the end-of-word
-   changes first: shortcuts, the restore of non-Vietnamese words, thươ → thuở.
+   the editor holds exactly the old word plus one new character. A letter goes to the
+   engine with the word, and the word is rewritten in place. Anything else (space,
+   digit, punctuation, Enter) ends the word: shortcuts, the restore of non-Vietnamese
+   words and thươ → thuở are applied to the word, with the character kept after it. A
+   long press (repeats) is AknFep's: no rewrite.
+4. What a key types is decided by what appears in the editor, never by the key event's
+   code: on the E72 the letter keys that carry the phone keypad (R T Y F G H V B N, U
+   `*`, J `#` and so on) send the keypad's character as the code, and AknFep types the
+   letter. App 0.0.1 took those codes for word ends, so f, j, t, n, u and the rest
+   never got Telex (2026-10-16: Hoaf, Viêjt, ngươif on the screen; `daaus`, where u ended
+   the word at dâ and the restore made it daa). The log has them: those keys have the
+   scan code and the code of the keypad's key, `'1'` to `'9'` (R T Y, F G H, V B N),
+   `'0'`, `'*'` (U) and `'#'` (J, scan 7F); the other letters have their capital as the
+   scan code and the small letter as the code. Ctrl+Space is scan 05, code 0.
 5. Ctrl+Space is the one key it consumes.
 
 Password editors are left alone. How a word is rewritten is the probe's question; there
@@ -75,7 +93,12 @@ The [V] / [E] mark: an application cannot add an icon to the system's universal
 indicator pane (`CAknIndicatorContainer::CreateIndicatorFromResourceL` works only in an
 application's own status pane), so `CVnIndicator` is a small window of the application,
 in front of its other windows, placed over the status pane. In the probe it is in
-VnKey's own window group; the plugin will show it in each application.
+VnKey's own window group; the plugin will show it in each application. It looks like the
+phone's own indicator icons: the letter V or E in a thin frame, in the skin's colour for
+universal indicator icons (`KAknsIIDQsnIconColors`, `EAknsCIQsnIconColorsCG2`), on the
+bar's own background, drawn with the bottom bar's skin context
+(`CEikButtonGroupContainer::Current()->ButtonGroup()->AsControl()`); black where that
+cannot be had.
 
 ## Telex rules
 
@@ -131,18 +154,24 @@ As in OttPilot (`symbian/CLAUDE.md` there):
 ```
 bash symbian/test/run.sh                 # the engine's tests, with the Mac's clang++
 bash symbian/group/docker-build.sh       # -> symbian/sis/vnkey.sisx
-bash symbian/group/publish.sh            # -> http://<host>/s60/vnkey/ for the phone's browser
+bash symbian/group/publish.sh            # serves it to the phone's browser from this Mac
 ```
 
-`publish.sh` uploads `vnkey-<version>.sisx` and a plain page that links it over ssh,
-to `VNKEY_DL_SSH` and `VNKEY_DL_DIR` from `symbian/build.local` (git-ignored, made from
-OttPilot's `symbian/build.local`). That folder is `vnkey/` inside OttPilot's download
-folder, which OttPilot's nginx serves at `http://<host>/s60/` with the type that makes
-the S60 browser install a `.sisx` (OttPilot's `server/deploy/README.md`, "Downloads for
-the phone"); the script refuses a folder that holds OttPilot's packages, whose page it
-would replace. The host, its name and the folders stay out of every file in git, as in
-OttPilot: write `<host>`. Publishing puts a package on the internet: run it when Khoi
-asks for it.
+`publish.sh` serves the package on the local network only, from this machine: it
+copies it into `symbian/web/` (git-ignored) as `vnkey-<version>.sisx` with a plain page
+that links it, prints `http://<LAN address>:8060/` and runs the web stub
+`symbian/group/webstub.py` there (plain HTTP, a `.sisx` sent as
+`application/vnd.symbian.install` so that the S60 browser installs it, no caching, no
+directory listings, every request shown) until Ctrl+C. The E72 opens that address on
+the same Wi-Fi. `VNKEY_WEB_PORT` changes the port. Nothing is uploaded anywhere: Khoi
+chose that on 2026-10-16, over OttPilot's way of putting the packages on the VPS.
+
+The stub also takes the phone's log into `logs/` (git-ignored) as
+`vnkey-<date>-<time>.log`: VnKey's Options > Send log POSTs it to `/log`
+(`CVnLogSender`, which joins the Wi-Fi that is up or asks for the access point, as
+OttPilot does), and `/upload` is a form for the phone's browser, which can pick
+`E:\VnKey\vnkey.log` (used on 2026-10-16). The build bakes the Mac's LAN address and
+port into the app as the first address for Send log; the query lets it be changed.
 
 The build runs in the SDK's Docker image `minhkhoi4dev/s60v3-sdk-docker:1.1.0`
 (GnuPoc, GCCE, the S60 3rd FP2 SDK; public on Docker Hub). Every build adds 1 to the
@@ -160,7 +189,8 @@ file does not compile; `build.sh` stops when `vnkey.exe` was not made. The signi
    the phone and the loaded one, 2 load that plugin, 3 make a second FEP from it.
    Done when: on the E72 Telex gives the right text with one of the methods (the log
    says `ok`), Ctrl+Space switches, one indicator place is chosen, and the three FEP
-   checks are in the log.
+   checks are in the log. Done 2026-10-16 (app 0.0.4): method 1, place 1, all three
+   checks passed.
 2. The plugin: `vnkeyfep.dll`, an ECOM `CCoeFepPlugIn` with capabilities All -TCB, that
    loads AknFep (the UID from FEP check 1), returns its FEP and adds `CVnCatcher`;
    VnKey switches the system's FEP to it and back (`CCoeEnv::InstallFepL`,

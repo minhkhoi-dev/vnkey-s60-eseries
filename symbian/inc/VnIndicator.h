@@ -5,8 +5,11 @@
 
 // The [V] / [E] mark in the status bar (CLAUDE.md "Requirements"): a small window of the
 // application's own, kept in front of its other windows over the status pane, since an
-// application cannot add an icon to the system's own indicators. The probe puts it in one
-// of a few places of the status pane (Place()), to find the one that looks right on the E72.
+// application cannot add an icon to the system's own indicators. It is drawn as the
+// phone's own indicator icons are (the memory card's): the letter in a thin frame, in the
+// skin's colour for universal indicator icons, on the background of the bar it sits in.
+// The probe can put it in a few places (Place()); place 0, at the left end of the
+// universal indicator pane in the E72's bottom bar, is the one Khoi chose (2026-10-16).
 class CVnIndicator : public CCoeControl
     {
 public:
@@ -28,6 +31,8 @@ private:
     void ConstructL();
     void Layout();
     void Draw(const TRect& aRect) const;
+    TBool DrawBarBackground(CWindowGc& aGc) const;
+    void HandleResourceChange(TInt aType);
 
 private:
     TBool iVietnamese;

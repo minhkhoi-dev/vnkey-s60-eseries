@@ -9,7 +9,22 @@ IMAGE="${VNKEY_SDK_IMAGE:-minhkhoi4dev/s60v3-sdk-docker:1.1.0}"
 
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 
-docker run --rm -v "$repo":/src "$IMAGE" bash -c '
+# The app's first address for Options > Send log: this machine's web stub
+# (publish.sh); the container's own address would be of no use.
+if [ -z "${VNKEY_LOG_SERVER:-}" ]; then
+    # shellcheck source=lan.sh
+    . "$repo/symbian/group/lan.sh"
+    ip="$(lan_ip || true)"
+    if [ -n "$ip" ]; then
+        VNKEY_LOG_SERVER="$ip:${VNKEY_WEB_PORT:-8060}"
+    fi
+fi
+env_args=()
+if [ -n "${VNKEY_LOG_SERVER:-}" ]; then
+    env_args=(-e "VNKEY_LOG_SERVER=$VNKEY_LOG_SERVER")
+fi
+
+docker run --rm "${env_args[@]}" -v "$repo":/src "$IMAGE" bash -c '
     set -euo pipefail
     mkdir /build
     cp -r /src/symbian /build/symbian
@@ -19,4 +34,4 @@ docker run --rm -v "$repo":/src "$IMAGE" bash -c '
     cp VERSION /src/symbian/VERSION
     cp inc/VnKeyVersion.h /src/symbian/inc/VnKeyVersion.h
 '
-echo "Built $repo/symbian/sis/vnkey.sisx (version $(tr -d '\r\n' < "$repo/symbian/VERSION"))"
+echo "Built $repo/symbian/sis/vnkey.sisx (version $(tr -d '\r\n' < "$repo/symbian/VERSION"), log server ${VNKEY_LOG_SERVER:-default})"

@@ -1,4 +1,6 @@
 #include <akntitle.h>
+#include <aknnotewrappers.h>
+#include <aknquerydialog.h>
 #include <avkon.hrh>
 #include <eikmenup.h>
 #include <eikspane.h>
@@ -44,6 +46,15 @@ _LIT8(KSampleMacros,
       "vn Vi\xE1\xBB\x87" "t Nam\r\n");
 
 const TInt KMaxMacroFile = 16 * 1024;
+const TInt KMaxLogSent = 1024 * 1024; // the last megabyte of the log at most
+
+_LIT(KSendFmt, "send log: to %S, %d bytes");
+_LIT(KSentFmt, "send log: error %d, %S");
+_LIT(KSentOkFmt, "Log sent: %S");
+_LIT(KSentBadFmt, "Log not sent: error %d %S");
+_LIT(KSending, "Sending the log");
+_LIT(KBusy, "Still sending the log");
+_LIT(KLogCleared, "Log cleared");
 
 void CVnKeyAppUi::ConstructL()
     {
@@ -57,6 +68,8 @@ void CVnKeyAppUi::ConstructL()
     AddToStackL(iView);
     iCatcher = CVnCatcher::NewL(*this);
     iIndicator = CVnIndicator::NewL();
+    iSender = CVnLogSender::NewL(*this);
+    iLogServer.Copy(KVnLogServer);
     TRAPD(err, LoadMacrosL());
     if (err != KErrNone)
         {
@@ -72,6 +85,7 @@ void CVnKeyAppUi::ConstructL()
 
 CVnKeyAppUi::~CVnKeyAppUi()
     {
+    delete iSender;
     delete iCatcher; // takes itself off the control stack
     delete iIndicator;
     if (iView)
@@ -134,6 +148,19 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             iView->ClearL();
             iLog->Write(_L("--- text cleared"));
             return;
+        case EVnCmdSendLog:
+            SendLogL();
+            return;
+        case EVnCmdClearLog:
+            {
+            iLog->Clear();
+            TBuf<40> line;
+            line.Format(_L("VnKey %S log cleared"), &KVnVersion);
+            iLog->Write(line);
+            CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote;
+            note->ExecuteLD(KLogCleared);
+            return;
+            }
         default:
             return;
         }
@@ -297,6 +324,66 @@ void CVnKeyAppUi::WriteSampleMacrosL(const TDesC& aName)
     CleanupClosePushL(file);
     User::LeaveIfError(file.Write(KSampleMacros));
     CleanupStack::PopAndDestroy(&file);
+    }
+
+// Asks for the stub's address (the last one, at first the one the build baked in) and
+// sends the log there; LogSent() says how it went.
+void CVnKeyAppUi::SendLogL()
+    {
+    if (iSender->IsSending())
+        {
+        CAknInformationNote* note = new (ELeave) CAknInformationNote;
+        note->ExecuteLD(KBusy);
+        return;
+        }
+    TBuf<60> server(iLogServer);
+    CAknTextQueryDialog* query = CAknTextQueryDialog::NewL(server);
+    if (!query->ExecuteLD(R_VNKEY_SERVER_QUERY))
+        {
+        return;
+        }
+    server.TrimAll();
+    iLogServer.Copy(server);
+    HBufC8* content = iLog->ContentL(KMaxLogSent);
+    CleanupStack::PushL(content);
+    TBuf<100> line;
+    line.Format(KSendFmt, &iLogServer, content->Length());
+    iLog->Write(line); // in the next log sent, not this one
+    TRAPD(err, iSender->SendL(iLogServer, *content));
+    CleanupStack::PopAndDestroy(content);
+    if (err != KErrNone)
+        {
+        LogSent(err, KNullDesC);
+        return;
+        }
+    CAknInformationNote* note = new (ELeave) CAknInformationNote;
+    note->ExecuteLD(KSending);
+    }
+
+void CVnKeyAppUi::LogSent(TInt aError, const TDesC& aReply)
+    {
+    TBuf<200> line;
+    line.Format(KSentFmt, aError, &aReply);
+    iLog->Write(line);
+    TBuf<160> text;
+    if (aError == KErrNone)
+        {
+        text.Format(KSentOkFmt, &aReply);
+        CAknConfirmationNote* note = new CAknConfirmationNote;
+        if (note)
+            {
+            TRAP_IGNORE(note->ExecuteLD(text));
+            }
+        }
+    else
+        {
+        text.Format(KSentBadFmt, aError, &aReply);
+        CAknErrorNote* note = new CAknErrorNote;
+        if (note)
+            {
+            TRAP_IGNORE(note->ExecuteLD(text));
+            }
+        }
     }
 
 void CVnKeyAppUi::RunFepCheck(TInt aCommand)

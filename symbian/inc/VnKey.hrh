@@ -16,7 +16,9 @@ enum TVnKeyCommand
     EVnCmdFepList,          // FEP check 1: the FEP plugins on the phone
     EVnCmdFepLoad,          // FEP check 2: load the phone's FEP plugin and free it
     EVnCmdFepCreate,        // FEP check 3: make a second FEP from it and delete it
-    EVnCmdClear             // empty the editor
+    EVnCmdClear,            // empty the editor
+    EVnCmdSendLog,          // send the log to the web stub on the Mac
+    EVnCmdClearLog          // empty the log
     };
 
 #endif // VNKEY_HRH

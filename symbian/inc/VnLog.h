@@ -15,6 +15,10 @@ public:
     ~CVnLog();
     // Does not leave: a line that cannot be written is lost.
     void Write(const TDesC& aLine);
+    // The log as it is, its last aMax bytes at most, for Options > Send log.
+    HBufC8* ContentL(TInt aMax);
+    // Empties the log (Options > Clear log).
+    void Clear();
     // The folder of the log, with a trailing backslash; other files of VnKey go there too.
     const TDesC& Folder() const { return iFolder; }
     RFs& Fs() { return iFs; }

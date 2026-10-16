@@ -9,9 +9,13 @@ symbian/inc/VnKeyVersion.h
 # signing keys - never commit
 symbian/sis/dev.key
 symbian/sis/dev.cer
-# local settings: where packages are published
+# local settings, never committed
 symbian/build.local
+# the folder publish.sh serves to the phone
+symbian/web/
 # test logs copied off the phone
 logs/
 # macOS
 .DS_Store
+# Python bytecode
+__pycache__/

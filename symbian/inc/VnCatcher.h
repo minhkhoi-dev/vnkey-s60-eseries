@@ -18,12 +18,12 @@ public:
 
 // Telex in the editors of the application it lives in (CLAUDE.md "Design"). It sits on the
 // control stack just above the phone's own FEP (AknFep), so it sees every key first, and it
-// never takes a letter away from it: AknFep types the letter as always, with its case, its
-// Fn layer and the rest, and when the key is released (or the next key comes) the catcher
-// reads the word before the cursor from the editor, asks the Telex engine about it and
-// rewrites it in place. A key that ends a word (space, punctuation, Enter) first gets the
-// end-of-word changes: typing shortcuts and the restore of words that are not Vietnamese.
-// Ctrl+Space switches Vietnamese on and off and is the one key it keeps for itself.
+// never takes a key away from it: AknFep types as always, with its case, its Fn layer and
+// the rest, and when the key is released (or the next key comes) the catcher looks at the
+// one character that appeared after the word before the cursor. A letter goes to the Telex
+// engine with the word, which is rewritten in place; anything else (space, digit,
+// punctuation, Enter) ends the word: typing shortcuts and the restore of words that are not
+// Vietnamese. Ctrl+Space switches Vietnamese on and off and is the one key it keeps.
 class CVnCatcher : public CCoeControl, public MFepInlineTextFormatRetriever,
                    public MFepPointerEventHandlerDuringInlineEdit
     {
@@ -67,7 +67,6 @@ private:
     static TInt AsyncFlush(TAny* aSelf);
     void Flush();
     void FlushL();
-    void EndWordL(MCoeFepAwareTextEditor& aEditor);
     void ReplaceL(MCoeFepAwareTextEditor& aEditor, TInt aStart, TInt aEnd, const TDesC& aText);
     void InlineL(MCoeFepAwareTextEditor& aEditor, TInt aPos, const TDesC& aText);
     void SimulateL(TInt aBackspaces, const TDesC& aText);
@@ -91,7 +90,6 @@ private:
         TInt iPos;                          // the cursor before the letter
         TInt iDocLength;
         TInt iScanCode;
-        TUint iCode;
         TBuf<KVnMaxWord> iWord;             // the word before the cursor
         };
 

@@ -61,6 +61,34 @@ CVnLog::~CVnLog()
     iFs.Close();
     }
 
+HBufC8* CVnLog::ContentL(TInt aMax)
+    {
+    if (!iOpen)
+        {
+        User::Leave(KErrNotReady);
+        }
+    TInt size = 0;
+    User::LeaveIfError(iFile.Size(size));
+    const TInt length = Min(size, aMax);
+    HBufC8* content = HBufC8::NewLC(length);
+    TPtr8 ptr(content->Des());
+    User::LeaveIfError(iFile.Read(size - length, ptr, length));
+    TInt end = 0;
+    iFile.Seek(ESeekEnd, end); // the next line goes at the end again
+    CleanupStack::Pop(content);
+    return content;
+    }
+
+void CVnLog::Clear()
+    {
+    if (iOpen)
+        {
+        iFile.SetSize(0);
+        TInt start = 0;
+        iFile.Seek(ESeekStart, start);
+        }
+    }
+
 void CVnLog::Write(const TDesC& aLine)
     {
     if (!iOpen)

@@ -43,16 +43,6 @@ static TBool IsAsciiLetter(TUint aCode)
     return (aCode >= 'a' && aCode <= 'z') || (aCode >= 'A' && aCode <= 'Z');
     }
 
-// Space, digits, punctuation, Enter, Tab: the word before the cursor is over.
-static TBool EndsWord(TUint aCode)
-    {
-    if (aCode == EKeyEnter || aCode == EKeyLineFeed || aCode == EKeyTab || aCode == 0x2029)
-        {
-        return ETrue;
-        }
-    return aCode >= ' ' && aCode < 0x7F && !IsAsciiLetter(aCode);
-    }
-
 CVnCatcher* CVnCatcher::NewL(MVnCatcherObserver& aObserver)
     {
     CVnCatcher* self = new (ELeave) CVnCatcher(aObserver);
@@ -170,32 +160,14 @@ TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode a
         iEngine.Reset();
         return EKeyWasNotConsumed;
         }
-    const TUint code = aKeyEvent.iCode;
-    if (IsAsciiLetter(code))
+    // What the key types is AknFep's to decide, and the key's code does not tell: on the
+    // E72 the letters on the phone keypad's keys (t, f, j, u ...) come as the keypad's
+    // character ('2', '4', '#', '*'). Flush() looks at what appeared in the editor.
+    if (!iPending.iSnap || iPending.iScanCode != aKeyEvent.iScanCode || iPending.iEditor != editor)
         {
-        if (!iPending.iSnap || iPending.iScanCode != aKeyEvent.iScanCode || iPending.iEditor != editor)
-            {
-            Snapshot(editor, aKeyEvent.iScanCode); // no key down seen for it
-            }
-        if (iPending.iSnap)
-            {
-            iPending.iCode = code;
-            iPending.iActive = ETrue;
-            }
+        Snapshot(editor, aKeyEvent.iScanCode); // no key down seen for it
         }
-    else if (EndsWord(code))
-        {
-        iPending.iSnap = EFalse;
-        TRAPD(err, EndWordL(*editor));
-        if (err != KErrNone)
-            {
-            Log(_L("end of word: error %d"), err);
-            }
-        }
-    else
-        {
-        iPending.iSnap = EFalse;
-        }
+    iPending.iActive = iPending.iSnap;
     return EKeyWasNotConsumed;
     }
 
@@ -321,8 +293,9 @@ void CVnCatcher::Flush()
         }
     }
 
-// AknFep has typed the letter: if the editor holds exactly the word from before and the
-// letter after it, the engine gets them.
+// AknFep has handled the key: if the editor holds exactly the word from before and one
+// character after it, a letter goes to the engine with the word, and anything else ends
+// the word (CLAUDE.md "Design").
 void CVnCatcher::FlushL()
     {
     iPending.iActive = EFalse;
@@ -353,37 +326,25 @@ void CVnCatcher::FlushL()
         return;
         }
     const TText typed = now[wordLength];
-    if (TVnTelex::ToLower(typed) != TVnTelex::ToLower(static_cast<TText>(iPending.iCode)))
-        {
-        Log(_L("flush: typed %04x for key %04x"), typed, iPending.iCode); // Fn, Chr
-        iEngine.Reset();
-        return;
-        }
-    TText out[KVnMaxOut];
+    TText out[KVnMaxOut + 1];
     TInt outLength = 0;
-    if (iEngine.Key(iPending.iWord.Ptr(), wordLength, typed, out, outLength))
+    if (IsAsciiLetter(typed))
         {
+        if (iEngine.Key(iPending.iWord.Ptr(), wordLength, typed, out, outLength))
+            {
+            ReplaceL(*editor, start, iPending.iPos + 1, TPtrC(out, outLength));
+            }
+        }
+    else if (TVnTelex::IsWordChar(typed))
+        {
+        iEngine.Reset(); // a Vietnamese letter from the Chr table, typed as it is
+        }
+    else if (iEngine.Break(iPending.iWord.Ptr(), wordLength, &iMacros, out, outLength))
+        {
+        // a space, digit, punctuation or Enter ended the word: shortcuts and the restore,
+        // with the character kept after the word
+        out[outLength++] = typed;
         ReplaceL(*editor, start, iPending.iPos + 1, TPtrC(out, outLength));
-        }
-    }
-
-// A space, a digit, a punctuation mark or Enter is about to be typed.
-void CVnCatcher::EndWordL(MCoeFepAwareTextEditor& aEditor)
-    {
-    TCursorSelection sel;
-    aEditor.GetCursorSelectionForFep(sel);
-    TBuf<KVnMaxWord + 1> word;
-    if (sel.Length() != 0 || ReadWordBefore(aEditor, sel.iCursorPos, word) > KVnMaxWord
-        || WordCharAfter(aEditor, sel.iCursorPos))
-        {
-        iEngine.Reset();
-        return;
-        }
-    TText out[KVnMaxOut];
-    TInt outLength = 0;
-    if (iEngine.Break(word.Ptr(), word.Length(), &iMacros, out, outLength))
-        {
-        ReplaceL(aEditor, sel.iCursorPos - word.Length(), sel.iCursorPos, TPtrC(out, outLength));
         }
     }
 
@@ -423,7 +384,7 @@ void CVnCatcher::ReplaceL(MCoeFepAwareTextEditor& aEditor, TInt aStart, TInt aEn
 
     TCursorSelection sel;
     aEditor.GetCursorSelectionForFep(sel);
-    TBuf<KVnMaxOut> got;
+    TBuf<KVnMaxOut + 1> got;
     aEditor.GetEditorContentForFep(got, aStart, aText.Length());
     const TBool ok = err == KErrNone && got == aText && sel.Length() == 0
         && sel.iCursorPos == aStart + aText.Length();

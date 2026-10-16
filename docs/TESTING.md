@@ -1,20 +1,26 @@
 # Testing VnKey on the E72
 
 The phone writes what it does to `vnkey.log` in `E:\VnKey\` on the memory card
-(`C:\Data\VnKey\` without a card), one line per event with the phone's time. After a
-test, connect the USB cable, choose Mass storage on the phone, and copy the log into
-`logs/` of this repository (git-ignored), then tell Claude which steps were done and what
-was seen on the screen. The log is appended to, run after run; each run starts with
-`VnKey <version> start`.
+(`C:\Data\VnKey\` without a card), one line per event with the phone's time. The log is
+appended to, run after run; each run starts with `VnKey <version> start`.
+
+To get it to the Mac, with `bash symbian/group/publish.sh` running there (the web stub):
+VnKey's Options > Send log (OK on the address, which the build filled in), or the stub's
+page in the phone's browser > Send a log > pick `E:\VnKey\vnkey.log` > Send. Either way
+it lands in `logs/` of this repository (git-ignored) as `vnkey-<date>-<time>.log`. Then
+tell Claude which steps were done and what was seen on the screen. Options > Clear log
+empties it on the phone after it was sent.
 
 ## The probe (roadmap 1, app 0.0.x)
 
 Before the first run:
 
 - Install the package (App manager: Software installation = All, as for OttPilot):
-  with the phone's browser from `http://<host>/s60/vnkey/` after
-  `bash symbian/group/publish.sh`, or copy `symbian/sis/vnkey.sisx` to the memory card
-  over USB (Mass storage) or Bluetooth and open it on the phone.
+  run `bash symbian/group/publish.sh` on the Mac, open the address it prints
+  (`http://<the Mac's LAN address>:8060/`) in the phone's browser on the same Wi-Fi and
+  choose Install; the stub's terminal shows the download. Or copy
+  `symbian/sis/vnkey.sisx` to the memory card over USB (Mass storage) or Bluetooth and
+  open it on the phone.
 - Predictive text off: in Messaging, write a new message, then Options > Input options
   > Prediction > Off (the setting is the phone's, so it holds in VnKey too).
 
@@ -56,7 +62,7 @@ Before the first run:
    - Options > FEP check 3: second FEP. This makes a second copy of the phone's FEP for
      a moment; VnKey may close or misbehave after it. Exit VnKey afterwards and start it
      again to check it still works.
-9. Options > Exit, then copy the log.
+9. Options > Send log, then Options > Exit.
 
 What the log shows: `key`/`down`/`up` lines for every key event (code, scan code,
 modifiers, cursor, length, the editor's input mode and case), `rewrite <method>: old ->

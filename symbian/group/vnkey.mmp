@@ -5,7 +5,7 @@ TARGETTYPE      exe
 UID             0x100039CE 0xE7A10001   // 0xE... = development UID range, fine for self-signing
 SECUREID        0xE7A10001
 VENDORID        0
-CAPABILITY      NONE
+CAPABILITY      NetworkServices   // Options > Send log
 
 EPOCSTACKSIZE   0x5000
 EPOCHEAPSIZE    0x10000 0x400000
@@ -20,6 +20,7 @@ SOURCE          VnCatcher.cpp
 SOURCE          VnIndicator.cpp
 SOURCE          VnFepProbe.cpp
 SOURCE          VnLog.cpp
+SOURCE          VnLogSender.cpp
 SOURCE          VnTelex.cpp
 
 SOURCEPATH      ../data
@@ -38,3 +39,4 @@ SYSTEMINCLUDE   /epoc32/include
 LIBRARY         euser.lib apparc.lib cone.lib eikcore.lib eikcoctl.lib
 LIBRARY         avkon.lib bafl.lib gdi.lib efsrv.lib charconv.lib
 LIBRARY         fepbase.lib etext.lib form.lib ecom.lib ws32.lib
+LIBRARY         esock.lib insock.lib commdb.lib aknskins.lib

@@ -40,7 +40,36 @@ RESOURCE MENU_PANE r_vnkey_menu
         MENU_ITEM { command = EVnCmdFepLoad;        txt = "FEP check 2: load plugin"; },
         MENU_ITEM { command = EVnCmdFepCreate;      txt = "FEP check 3: second FEP"; },
         MENU_ITEM { command = EVnCmdClear;          txt = "Clear text"; },
+        MENU_ITEM { command = EVnCmdSendLog;        txt = "Send log"; },
+        MENU_ITEM { command = EVnCmdClearLog;       txt = "Clear log"; },
         MENU_ITEM { command = EAknSoftkeyExit;      txt = "Exit"; }
+        };
+    }
+
+// Options > Send log: the address of the web stub on the Mac, filled in with the last one.
+RESOURCE DIALOG r_vnkey_server_query
+    {
+    flags = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtQuery;
+            id = EGeneralQuery;
+            control = AVKON_DATA_QUERY
+                {
+                layout = EDataLayout;
+                label = "Log server (address:port)";
+                control = EDWIN
+                    {
+                    flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+                    maxlength = 60;
+                    width = 16;
+                    lines = 1;
+                    };
+                };
+            }
         };
     }
 

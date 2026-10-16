@@ -57,12 +57,35 @@ void VnFepProbe::ListL(CCoeEnv& aEnv, CVnLog& aLog)
     CleanupStack::PopAndDestroy(2, &uids); // names, uids
     }
 
+// The UID of the FEP this application runs, or, while CONE has not loaded it yet (it does
+// so from an active object after the app's start: 0.0.1 saw uid 0 there), the first FEP
+// plugin ECOM knows: on the E72 the only one, AknFEP 0x101FD65A.
+static TUid FepUidL(CCoeEnv& aEnv, CVnLog& aLog)
+    {
+    if (aEnv.FepUid() != KNullUid)
+        {
+        return aEnv.FepUid();
+        }
+    RImplInfoPtrArray impls;
+    CleanupStack::PushL(TCleanupItem(ResetAndDestroy, &impls));
+    REComSession::ListImplementationsL(KUidFepPluginInterface, impls);
+    if (impls.Count() == 0)
+        {
+        User::Leave(KErrNotFound);
+        }
+    const TUid uid = impls[0]->ImplementationUid();
+    CleanupStack::PopAndDestroy(&impls);
+    aLog.Write(_L("fep: none loaded yet, taking the first plugin"));
+    return uid;
+    }
+
 void VnFepProbe::LoadPluginL(CCoeEnv& aEnv, CVnLog& aLog)
     {
+    const TUid uid = FepUidL(aEnv, aLog);
     TBuf<80> line;
-    line.Format(_L("fep: loading plugin %08x"), aEnv.FepUid().iUid);
+    line.Format(_L("fep: loading plugin %08x"), uid.iUid);
     aLog.Write(line);
-    CCoeFepPlugIn* plugin = CCoeFepPlugIn::NewL(aEnv.FepUid());
+    CCoeFepPlugIn* plugin = CCoeFepPlugIn::NewL(uid);
     aLog.Write(_L("fep: plugin loaded"));
     delete plugin;
     aLog.Write(_L("fep: plugin freed"));
@@ -77,10 +100,11 @@ class CVnFakeFepParameters : public CBase
 
 void VnFepProbe::CreateFepL(CCoeEnv& aEnv, CVnLog& aLog)
     {
+    const TUid uid = FepUidL(aEnv, aLog);
     TBuf<80> line;
-    line.Format(_L("fep: creating a second FEP from %08x"), aEnv.FepUid().iUid);
+    line.Format(_L("fep: creating a second FEP from %08x"), uid.iUid);
     aLog.Write(line);
-    CCoeFepPlugIn* plugin = CCoeFepPlugIn::NewL(aEnv.FepUid());
+    CCoeFepPlugIn* plugin = CCoeFepPlugIn::NewL(uid);
     CleanupStack::PushL(plugin);
     CVnFakeFepParameters* params = new (ELeave) CVnFakeFepParameters;
     CleanupStack::PushL(params);
