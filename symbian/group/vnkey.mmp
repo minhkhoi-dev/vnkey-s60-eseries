@@ -1,0 +1,40 @@
+// vnkey.mmp - VnKey for S60 3rd Edition FP2 (Nokia E72): the probe app (roadmap 1)
+
+TARGET          vnkey.exe
+TARGETTYPE      exe
+UID             0x100039CE 0xE7A10001   // 0xE... = development UID range, fine for self-signing
+SECUREID        0xE7A10001
+VENDORID        0
+CAPABILITY      NONE
+
+EPOCSTACKSIZE   0x5000
+EPOCHEAPSIZE    0x10000 0x400000
+
+SOURCEPATH      ../src
+SOURCE          VnKey.cpp
+SOURCE          VnKeyApplication.cpp
+SOURCE          VnKeyDocument.cpp
+SOURCE          VnKeyAppUi.cpp
+SOURCE          VnKeyAppView.cpp
+SOURCE          VnCatcher.cpp
+SOURCE          VnIndicator.cpp
+SOURCE          VnFepProbe.cpp
+SOURCE          VnLog.cpp
+SOURCE          VnTelex.cpp
+
+SOURCEPATH      ../data
+START RESOURCE  vnkey.rss
+HEADER
+TARGETPATH      /resource/apps
+END
+
+START RESOURCE  vnkey_reg.rss
+TARGETPATH      /private/10003a3f/apps
+END
+
+USERINCLUDE     ../inc
+SYSTEMINCLUDE   /epoc32/include
+
+LIBRARY         euser.lib apparc.lib cone.lib eikcore.lib eikcoctl.lib
+LIBRARY         avkon.lib bafl.lib gdi.lib efsrv.lib charconv.lib
+LIBRARY         fepbase.lib etext.lib form.lib ecom.lib ws32.lib

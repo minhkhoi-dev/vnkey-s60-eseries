@@ -1,0 +1,15 @@
+; vnkey.pkg - installation package for VnKey
+; $(EPOCROOT) and @VERSION_*@ are substituted by group/build.sh from ../VERSION
+&EN
+
+#{"VnKey"},(0xE7A10001),@VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_BUILD@
+
+%{"VnKey Dev"}
+:"VnKey Dev"
+
+; S60 3rd Edition FP2 (E72)
+[0x102752AE], 0, 0, 0, {"S60ProductID"}
+
+"$(EPOCROOT)epoc32/release/gcce/urel/vnkey.exe"-"!:\sys\bin\vnkey.exe"
+"$(EPOCROOT)epoc32/data/z/resource/apps/vnkey.rsc"-"!:\resource\apps\vnkey.rsc"
+"$(EPOCROOT)epoc32/data/z/private/10003a3f/apps/vnkey_reg.rsc"-"!:\private\10003a3f\import\apps\vnkey_reg.rsc"

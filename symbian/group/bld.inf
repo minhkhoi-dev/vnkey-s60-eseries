@@ -1,0 +1,6 @@
+// bld.inf - VnKey build description
+PRJ_PLATFORMS
+DEFAULT
+
+PRJ_MMPFILES
+vnkey.mmp

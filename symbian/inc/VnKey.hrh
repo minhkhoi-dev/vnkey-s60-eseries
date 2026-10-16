@@ -1,0 +1,22 @@
+// VnKey.hrh - command ids, shared by the resource file and the code
+#ifndef VNKEY_HRH
+#define VNKEY_HRH
+
+enum TVnKeyCommand
+    {
+    EVnCmdToggle = 0x6000,  // Vietnamese on / off (also Ctrl+Space)
+    EVnCmdTone,             // traditional / modern tone placement
+    EVnCmdWAlone,           // w alone types ư
+    EVnCmdSpell,            // spell check
+    EVnCmdRestore,          // restore the keys of words that are not Vietnamese
+    EVnCmdMacros,           // typing shortcuts
+    EVnCmdMethod,           // how the word in the editor is replaced (probe)
+    EVnCmdIndicatorPlace,   // where the [V]/[E] indicator goes (probe)
+    EVnCmdLogKeys,          // a log line for every key event (probe)
+    EVnCmdFepList,          // FEP check 1: the FEP plugins on the phone
+    EVnCmdFepLoad,          // FEP check 2: load the phone's FEP plugin and free it
+    EVnCmdFepCreate,        // FEP check 3: make a second FEP from it and delete it
+    EVnCmdClear             // empty the editor
+    };
+
+#endif // VNKEY_HRH

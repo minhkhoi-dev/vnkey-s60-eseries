@@ -1,0 +1,55 @@
+// vnkey.rss - the probe's resources
+NAME VNKY
+
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+#include <appinfo.rh>
+#include "VnKey.hrh"
+
+RESOURCE RSS_SIGNATURE { }
+
+RESOURCE TBUF r_default_document_name { buf = ""; }
+
+RESOURCE EIK_APP_INFO
+    {
+    menubar = r_vnkey_menubar;
+    cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+    }
+
+RESOURCE MENU_BAR r_vnkey_menubar
+    {
+    titles = { MENU_TITLE { menu_pane = r_vnkey_menu; } };
+    }
+
+// The texts with a state in them are set at runtime (CVnKeyAppUi::DynInitMenuPaneL).
+RESOURCE MENU_PANE r_vnkey_menu
+    {
+    items =
+        {
+        MENU_ITEM { command = EVnCmdToggle;         txt = "Vietnamese"; },
+        MENU_ITEM { command = EVnCmdTone;           txt = "Tone"; },
+        MENU_ITEM { command = EVnCmdWAlone;         txt = "w alone"; },
+        MENU_ITEM { command = EVnCmdSpell;          txt = "Spell check"; },
+        MENU_ITEM { command = EVnCmdRestore;        txt = "Restore English"; },
+        MENU_ITEM { command = EVnCmdMacros;         txt = "Shortcuts"; },
+        MENU_ITEM { command = EVnCmdMethod;         txt = "Rewrite method"; },
+        MENU_ITEM { command = EVnCmdIndicatorPlace; txt = "Indicator place"; },
+        MENU_ITEM { command = EVnCmdLogKeys;        txt = "Log every key"; },
+        MENU_ITEM { command = EVnCmdFepList;        txt = "FEP check 1: list"; },
+        MENU_ITEM { command = EVnCmdFepLoad;        txt = "FEP check 2: load plugin"; },
+        MENU_ITEM { command = EVnCmdFepCreate;      txt = "FEP check 3: second FEP"; },
+        MENU_ITEM { command = EVnCmdClear;          txt = "Clear text"; },
+        MENU_ITEM { command = EAknSoftkeyExit;      txt = "Exit"; }
+        };
+    }
+
+RESOURCE LOCALISABLE_APP_INFO r_vnkey_localisable_app_info
+    {
+    short_caption = "VnKey";
+    caption_and_icon = CAPTION_AND_ICON_INFO
+        {
+        caption = "VnKey";
+        number_of_icons = 0;
+        };
+    }

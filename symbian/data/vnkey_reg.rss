@@ -1,0 +1,13 @@
+// vnkey_reg.rss - application registration
+#include <appinfo.rh>
+#include <vnkey.rsg>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xE7A10001
+
+RESOURCE APP_REGISTRATION_INFO
+    {
+    app_file = "vnkey";
+    localisable_resource_file = "\\resource\\apps\\vnkey";
+    localisable_resource_id = R_VNKEY_LOCALISABLE_APP_INFO;
+    }
