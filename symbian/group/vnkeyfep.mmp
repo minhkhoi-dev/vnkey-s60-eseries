@@ -1,0 +1,28 @@
+// vnkeyfep.mmp - VnKey's FEP plugin (roadmap 2): loads AknFep and adds Telex to every
+// application. Loaded into every GUI process, so it carries every capability a process
+// may have (All -TCB) and has no writable static data (CLAUDE.md "Hard constraints").
+
+TARGET          vnkeyfep.dll
+TARGETTYPE      PLUGIN
+UID             0x10009D8D 0xE7A10002   // ECOM plugin DLL; 0xE... = development UID range
+VENDORID        0
+CAPABILITY      All -TCB
+
+SOURCEPATH      ../src
+SOURCE          VnFepPlugIn.cpp
+SOURCE          VnCatcher.cpp
+SOURCE          VnIndicator.cpp
+SOURCE          VnShared.cpp
+SOURCE          VnLog.cpp
+SOURCE          VnTelex.cpp
+
+SOURCEPATH      ../data
+START RESOURCE  E7A10002.rss
+TARGET          vnkeyfep.rsc
+END
+
+USERINCLUDE     ../inc
+SYSTEMINCLUDE   /epoc32/include /epoc32/include/ecom
+
+LIBRARY         euser.lib ecom.lib cone.lib eikcore.lib eikcoctl.lib avkon.lib
+LIBRARY         fepbase.lib efsrv.lib charconv.lib etext.lib form.lib gdi.lib aknskins.lib ws32.lib

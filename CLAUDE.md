@@ -17,8 +17,50 @@ switches; the indicator's place 1, in the bottom bar next to the phone's own ico
 clock, is the one Khoi wants. The letters on the phone keypad's keys broke words in 0.0.1
 (see "Design"), fixed in 0.0.2. The phone has one FEP plugin, AknFEP `0x101FD65A` in ROM;
 VnKey loaded it and had it make a second FEP object, which it deleted again, and went on
-working (FEP checks 2 and 3, 0.0.4). Options > Send log works. App 0.0.5 draws the
-indicator like the phone's icons (Khoi: "the same as memory card style"); not yet seen.
+working (FEP checks 2 and 3, 0.0.4). Options > Send log works. App 0.0.5 drew the
+indicator like the phone's icons (Khoi: "the same as memory card style"); on the phone
+its letter touched the frame's top, so 0.0.6 draws it pixel by pixel with room around.
+
+2026-10-17: roadmap 2 begun (app 0.1.x). On the E72 (0.1.1), "Telex in all apps" made
+VnKey's plugin the system FEP and eight running processes loaded it and added the catcher
+with no error (Popnotifierappserver, EikSrvs, screensaver, essysapp, fsmailserver, Xplore
+and more) — the plugin loads system-wide. Not yet confirmed: typing in Messaging/OttPilot.
+0.1.2/0.1.3 on the E72: "Telex in all apps" loaded the plugin into Messaging (Mce,
+UniEditor sid 102072d8), OttPilot and more, and one word was corrected in the SMS editor
+(`UniEditor: rewrite 0: Tiee -> Tiic ok`) — Telex reached real apps. But the inline-edit
+rewrite (method 1) fights AknFep's own inline edit in live editors: it worked once then the
+word came out wrong (`rewrite 0: ... BAD, got <one char>`) and the host application crashed
+(UniEditor and VnKey both). It had worked 136/136 in VnKey's own editor in roadmap 1, so the
+collision shows only over the plugin-loaded AknFep. 0.1.3 makes the rewrite method part of
+the shared state so it can be switched live from VnKey's menu and tried in real apps. On the
+E72 (0.1.3) method 3 (backspaces + retype through the FEP) typed Telex in Messaging, and the
+crash was pinned to AknFep's predictive entry: the underlined word in "Abc" mode is an open
+inline edit the rewrite collided with; with prediction off it worked. So 0.1.4 turns
+predictive entry off in the focused editor while Vietnamese is on (`EAknEditorFlagNoT9` +
+`ReportAknEdStateEventL`), and method 3 is the default (it is not restored to English
+prediction until the editor is reopened). 0.1.5: the trigger key is configurable in
+`triggers.txt` next to `macros.txt` (lines like `ctrl+space`, `fn+space`, `shift+space`, or
+a raw `0x5f`; modifiers ctrl/shift/fn/alt + a key, several lines = several triggers), read
+by VnKey and the plugin; Ctrl+Space is the default and the fallback when the file is empty.
+It was made configurable because Ctrl+Space is also the phone's own predictive-text toggle.
+Options > Reload macros/triggers re-reads both without a restart (VnKey's own catcher; other
+apps re-read when their plugin next loads). Two faults were found and fixed in 0.1.2: the old
+"FEP check 4" (and a pre-flight before the switch) loaded a second AknFep in VnKey's own
+process while the boot one was still there, which crashed AknFep — both removed; the switch
+is InstallFepL alone. The FEP
+setting does not survive a reboot on this phone (`fep: system setting ... error -6`;
+InstallFepL takes effect live but is not stored), so a restart is the safe way to turn it
+off, and VnKey now tracks the on/off state itself (FepUid() stayed AknFep's in VnKey's own
+process after the switch). The in-app off, which swaps the FEP in every process at once,
+restarts the phone (0.1.2 and 0.1.3 logs: no plugin teardown line is written before the
+reset, so a process crashes mid-switch; the reliable off is a reboot, which reverts to
+AknFep). 0.1.6 warns before the in-app off (`r_vnkey_off_query`) and points to the reboot;
+the live-off crash itself is unsolved and costly to retest (each try resets the phone).
+0.1.6 also shows the [V]/[E] mark in every application that has a status pane (roadmap 3):
+the plugin's catcher owns a `CVnIndicator` when `CEikStatusPaneBase::Current()` is there (a
+normal, non-fullscreen application; not a server or a game), deleted with the catcher by the
+app UI stack while the window group is still alive. The build's baked log server is the Mac's
+LAN address from `group/lan.sh` (192.168.1.16 on 2026-10-17).
 
 ## Requirements
 
@@ -29,7 +71,9 @@ Decided by Khoi on 2026-10-16:
 - The phone's font shows every Vietnamese letter: VnKey types precomposed Unicode (NFC).
 - Tone placement can be chosen in the settings: traditional (hòa, thúy, khỏe) or modern
   (hoà, thuý, khoẻ).
-- Ctrl+Space switches between Vietnamese and English.
+- Ctrl+Space switches between Vietnamese and English; the trigger key is configurable and
+  more than one may be set (`triggers.txt`), since Ctrl+Space is also the phone's own
+  predictive-text toggle.
 - A [V] / [E] mark in the status bar, like the memory card, clock and WLAN icons.
 - Besides plain Telex: w alone types ư; a spell check that restores the keys of words
   that are not Vietnamese (class, email, window); typing shortcuts (gõ tắt, ko → không).
@@ -94,11 +138,50 @@ indicator pane (`CAknIndicatorContainer::CreateIndicatorFromResourceL` works onl
 application's own status pane), so `CVnIndicator` is a small window of the application,
 in front of its other windows, placed over the status pane. In the probe it is in
 VnKey's own window group; the plugin will show it in each application. It looks like the
-phone's own indicator icons: the letter V or E in a thin frame, in the skin's colour for
+phone's own indicator icons: the letter V or E drawn pixel by pixel (5 x 7, so that no font
+fills the frame: 0.0.5 drew it with the dense font, which touched the top, and Khoi asked
+for room around it), 2 pixels inside a thin frame of 11 x 13, in the skin's colour for
 universal indicator icons (`KAknsIIDQsnIconColors`, `EAknsCIQsnIconColorsCG2`), on the
 bar's own background, drawn with the bottom bar's skin context
 (`CEikButtonGroupContainer::Current()->ButtonGroup()->AsControl()`); black where that
 cannot be had.
+
+The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM implementation
+`0xE7A10003` of the FEP interface `0x1020233F`):
+
+- CONE makes one in each GUI process when it is the system's FEP and keeps it as long as
+  the FEP object it returned, which CONE deletes first. Its `NewFepL` loads AknFep's
+  plugin (`0x101FD65A`; else the first other FEP plugin), keeps it (so that AknFep's DLL
+  stays loaded while AknFep's FEP lives), and returns the FEP AknFep makes. Then it adds
+  a `CVnCatcher`, unless the process is VnKey's own (which has its own catcher) or the
+  kill switch is there (`VnFiles::KillSwitch`: a file or folder `off` in `E:\VnKey\` or
+  `C:\Data\VnKey\`; File manager can make a folder on the phone).
+- The catcher there goes on the app UI's control stack with
+  `ECoeStackFlagOwnershipTransfered` (not shared with embedded app UIs, which could
+  delete it twice): at an application's exit whichever of the app UI and the plugin CONE
+  deletes first, the catcher goes with it once (`CatcherDestroyed` tells the plugin).
+- The state and the options are shared through one Publish and Subscribe property in
+  VnKey's category (its SID; `TVnShared`), which VnKey defines at its start, readable and
+  writable by any process. The catcher reads it at every key (a fast kernel call) and
+  writes it at Ctrl+Space. In the plugin a catcher does nothing while the property is
+  not there: after the phone restarts, until VnKey has run, so that a plugin that broke
+  applications could not break the phone's start.
+- Every application writes to the one log (each line at the file's end, after the
+  program's name); keys typed into a password field are never logged. Its buffers are
+  members, not on the stack (8 KB stacks).
+- VnKey's "Telex in all apps" calls `CCoeEnv::InstallFepL` with the plugin's UID (off
+  installs AknFep's UID again); every running application then loads it. It does NOT
+  pre-load the plugin by hand first: that made a second AknFep in VnKey's own process
+  (the boot one is still loaded) and crashed AknFep. On this phone the setting is not
+  stored (reading the FEP framework repository `0x10272618` gives `error -6`; the install
+  is live only), so a reboot returns to AknFep and VnKey tracks the state itself
+  (`iSystemFepOn`) rather than from `FepUid()`, which stays AknFep's in VnKey's own
+  process. The live off swaps the FEP in every process at once and is the suspect for the
+  phone restart of 2026-10-17.
+- The package puts everything on C:, so that with the memory card out the system's FEP
+  and VnKey, which switches it back, are still there. While the plugin is the FEP, a new
+  VnKey is installed only after switching it off, and VnKey is never uninstalled (the
+  phone would have no FEP) until roadmap 4 does that by itself.
 
 ## Telex rules
 
@@ -178,7 +261,9 @@ The build runs in the SDK's Docker image `minhkhoi4dev/s60v3-sdk-docker:1.1.0`
 build number in `symbian/VERSION` and generates `symbian/inc/VnKeyVersion.h`
 (git-ignored); the version is in the log's first line and in the package. Commit
 `symbian/VERSION` with the change it was built for. `abld` says nothing useful when a
-file does not compile; `build.sh` stops when `vnkey.exe` was not made. The signing keys
+file does not compile; `build.sh` stops when `vnkey.exe` or `vnkeyfep.dll` was not
+made. The plugin's DLL must have no `.data` or `.bss` (GnuPoc's `elf2e32` does not
+check it; `readelf -S` on the objects in the image does). The signing keys
 `symbian/sis/dev.key` and `dev.cer` are made by the first build and never committed.
 
 ## Roadmap
@@ -197,7 +282,8 @@ file does not compile; `build.sh` stops when `vnkey.exe` was not made. The signi
    WriteDeviceData); the on/off state and the options shared between applications;
    a kill switch (a file on the memory card that makes the plugin add nothing), and
    VnKey's own process left alone, so that a broken plugin can be switched off.
-   Done when: Messaging and OttPilot's chat take Telex.
-3. The [V] / [E] mark in every application, while an editor has the focus.
+   Done when: Messaging and OttPilot's chat take Telex. Begun 2026-10-17 (app 0.1.x).
+3. The [V] / [E] mark in every application. Begun 2026-10-17 (0.1.6): shown in every
+   application that has a status pane (non-fullscreen); the plugin's catcher owns it.
 4. Settings that last: the options, the shortcuts edited on the phone, the state at
    start; uninstalling switches the FEP back first.

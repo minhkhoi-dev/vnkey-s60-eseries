@@ -1,13 +1,10 @@
 #include <utf.h>
 #include "VnLog.h"
+#include "VnShared.h"
 
-_LIT(KCardFolder, "E:\\VnKey\\");
-_LIT(KPhoneFolder, "C:\\Data\\VnKey\\");
 _LIT(KLogName, "vnkey.log");
 _LIT(KTimeFmt, "%02d:%02d:%02d.%03d ");
 _LIT8(KNewLine, "\r\n");
-
-const TInt KMaxLine = 400; // characters; longer lines are cut
 
 CVnLog* CVnLog::NewL()
     {
@@ -21,35 +18,15 @@ CVnLog* CVnLog::NewL()
 void CVnLog::ConstructL()
     {
     User::LeaveIfError(iFs.Connect());
-    // the memory card when there is one, for USB mass storage
-    TDriveInfo drive;
-    if (iFs.Drive(drive, EDriveE) == KErrNone && drive.iType != EMediaNotPresent
-        && iFs.MkDirAll(KCardFolder) != KErrNotReady)
-        {
-        iFolder.Copy(KCardFolder);
-        }
-    else
-        {
-        iFolder.Copy(KPhoneFolder);
-        }
-    TInt err = iFs.MkDirAll(iFolder);
-    if (err != KErrNone && err != KErrAlreadyExists)
-        {
-        return; // no log, the app goes on
-        }
+    VnFiles::Folder(iFs, iFolder);
     TFileName name(iFolder);
     name.Append(KLogName);
-    err = iFile.Open(iFs, name, EFileWrite | EFileShareAny | EFileStreamText);
+    TInt err = iFile.Open(iFs, name, EFileWrite | EFileShareAny | EFileStreamText);
     if (err == KErrNotFound)
         {
         err = iFile.Create(iFs, name, EFileWrite | EFileShareAny | EFileStreamText);
         }
-    if (err == KErrNone)
-        {
-        TInt end = 0;
-        iFile.Seek(ESeekEnd, end);
-        iOpen = ETrue;
-        }
+    iOpen = err == KErrNone; // without it the app goes on, with no log
     }
 
 CVnLog::~CVnLog()
@@ -73,8 +50,6 @@ HBufC8* CVnLog::ContentL(TInt aMax)
     HBufC8* content = HBufC8::NewLC(length);
     TPtr8 ptr(content->Des());
     User::LeaveIfError(iFile.Read(size - length, ptr, length));
-    TInt end = 0;
-    iFile.Seek(ESeekEnd, end); // the next line goes at the end again
     CleanupStack::Pop(content);
     return content;
     }
@@ -89,6 +64,11 @@ void CVnLog::Clear()
         }
     }
 
+void CVnLog::SetPrefix(const TDesC& aPrefix)
+    {
+    iPrefix.Copy(aPrefix.Left(KMaxPrefix));
+    }
+
 void CVnLog::Write(const TDesC& aLine)
     {
     if (!iOpen)
@@ -98,15 +78,16 @@ void CVnLog::Write(const TDesC& aLine)
     TTime now;
     now.HomeTime();
     const TDateTime t = now.DateTime();
-    TBuf<KMaxLine + 16> line;
-    line.Format(KTimeFmt, t.Hour(), t.Minute(), t.Second(), t.MicroSecond() / 1000);
-    line.Append(aLine.Left(KMaxLine));
-    TBuf8<(KMaxLine + 16) * 3 + 2> utf8;
-    if (CnvUtfConverter::ConvertFromUnicodeToUtf8(utf8, line) != KErrNone)
+    iLine.Format(KTimeFmt, t.Hour(), t.Minute(), t.Second(), t.MicroSecond() / 1000);
+    iLine.Append(iPrefix);
+    iLine.Append(aLine.Left(KMaxLine));
+    if (CnvUtfConverter::ConvertFromUnicodeToUtf8(iUtf8, iLine) != KErrNone)
         {
         return;
         }
-    utf8.Append(KNewLine);
-    iFile.Write(utf8);
+    iUtf8.Append(KNewLine);
+    TInt end = 0;
+    iFile.Seek(ESeekEnd, end); // other applications write to it too
+    iFile.Write(iUtf8);
     iFile.Flush();
     }

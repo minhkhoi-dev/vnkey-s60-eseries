@@ -1,0 +1,25 @@
+// E7A10002.rss - ECOM registration of vnkeyfep.dll: one FEP plugin (CLAUDE.md "Design")
+#include <ecom/registryinfo.rh>
+
+RESOURCE REGISTRY_INFO theInfo
+    {
+    dll_uid = 0xE7A10002;
+    interfaces =
+        {
+        INTERFACE_INFO
+            {
+            interface_uid = 0x1020233F; // KUidFepPluginInterface
+            implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0xE7A10003;
+                    version_no = 1;
+                    display_name = "VnKey";
+                    default_data = "";
+                    opaque_data = "";
+                    }
+                };
+            }
+        };
+    }

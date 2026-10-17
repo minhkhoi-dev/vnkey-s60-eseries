@@ -1,11 +1,12 @@
-// vnkey.mmp - VnKey for S60 3rd Edition FP2 (Nokia E72): the probe app (roadmap 1)
+// vnkey.mmp - VnKey for S60 3rd Edition FP2 (Nokia E72): the app, with Telex in its own
+// editor and the switch for the plugin in every application (vnkeyfep.mmp)
 
 TARGET          vnkey.exe
 TARGETTYPE      exe
 UID             0x100039CE 0xE7A10001   // 0xE... = development UID range, fine for self-signing
 SECUREID        0xE7A10001
 VENDORID        0
-CAPABILITY      NetworkServices   // Options > Send log
+CAPABILITY      NetworkServices ReadDeviceData WriteDeviceData // Send log; the system's FEP
 
 EPOCSTACKSIZE   0x5000
 EPOCHEAPSIZE    0x10000 0x400000
@@ -21,6 +22,7 @@ SOURCE          VnIndicator.cpp
 SOURCE          VnFepProbe.cpp
 SOURCE          VnLog.cpp
 SOURCE          VnLogSender.cpp
+SOURCE          VnShared.cpp
 SOURCE          VnTelex.cpp
 
 SOURCEPATH      ../data
@@ -39,4 +41,4 @@ SYSTEMINCLUDE   /epoc32/include
 LIBRARY         euser.lib apparc.lib cone.lib eikcore.lib eikcoctl.lib
 LIBRARY         avkon.lib bafl.lib gdi.lib efsrv.lib charconv.lib
 LIBRARY         fepbase.lib etext.lib form.lib ecom.lib ws32.lib
-LIBRARY         esock.lib insock.lib commdb.lib aknskins.lib
+LIBRARY         esock.lib insock.lib commdb.lib aknskins.lib centralrepository.lib

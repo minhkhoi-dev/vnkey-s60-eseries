@@ -7,8 +7,6 @@
 #include <gdi.h>
 #include "VnIndicator.h"
 
-_LIT(KMarkV, "V");
-_LIT(KMarkE, "E");
 _LIT(KPlaceFmt, "indicator place %d at %d,%d %dx%d");
 _LIT(KRectFmt, " | %S %d,%d-%d,%d");
 _LIT(KNameStatus, "status");
@@ -21,8 +19,17 @@ _LIT(KNameContext, "context");
 _LIT(KBarFmt, " | bar %d,%d-%d,%d");
 _LIT(KNoBar, " | no bar");
 
-const TInt KPadding = 2;
-const TInt KGap = 2;
+// The letters, drawn pixel by pixel as the phone's bitmap icons are: 5 x 7 pixels, a byte
+// per row from the top, bit 4 the left column.
+const TInt KGlyphWidth = 5;
+const TInt KGlyphHeight = 7;
+static const TUint8 KGlyphV[KGlyphHeight] = { 0x11, 0x11, 0x11, 0x11, 0x0A, 0x0A, 0x04 };
+static const TUint8 KGlyphE[KGlyphHeight] = { 0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F };
+const TInt KPadding = 2; // pixels between the frame and the letter (Khoi, 2026-10-17)
+const TInt KFrame = 1;   // the frame's line
+const TInt KBoxWidth = KGlyphWidth + 2 * (KPadding + KFrame);   // 11
+const TInt KBoxHeight = KGlyphHeight + 2 * (KPadding + KFrame); // 13
+const TInt KGap = 2;     // between the box and the pane's edge
 
 // The bar at the bottom of the screen (softkeys, and on the E72 the indicators and the
 // clock), or NULL.
@@ -72,13 +79,10 @@ void CVnIndicator::SetPlace(TInt aPlace)
     DrawNow();
     }
 
-// A box as high as the pane it sits in (at most the font and padding), next to the pane's
-// edge that the place names.
+// A box of KBoxWidth x KBoxHeight pixels (twice that and more on a bigger screen), in the
+// middle of the pane's height, next to the pane's edge that the place names.
 void CVnIndicator::Layout()
     {
-    const CFont* font = CEikonEnv::Static()->DenseFont();
-    const TInt width = font->TextWidthInPixels(KMarkV) + 2 * KPadding + 2;
-    const TInt height = font->HeightInPixels() + 2 * KPadding;
     TRect pane;
     TBool leftEdge = EFalse;
     TBool outside = EFalse; // to the left of the pane, not inside it
@@ -106,8 +110,10 @@ void CVnIndicator::Layout()
         leftEdge = EFalse;
         outside = EFalse;
         }
-    const TInt h = Min(height, Max(pane.Height(), 8));
-    const TInt y = pane.iTl.iY + (pane.Height() - h) / 2;
+    iScale = Max(1, pane.Height() / (KBoxHeight + 1));
+    const TInt width = KBoxWidth * iScale;
+    const TInt h = KBoxHeight * iScale;
+    const TInt y = pane.iTl.iY + (pane.Height() - h + 1) / 2;
     TInt x;
     if (outside)
         {
@@ -147,6 +153,8 @@ TBool CVnIndicator::DrawBarBackground(CWindowGc& aGc) const
                                          KAknsDrawParamDefault);
     }
 
+// The frame, its corner pixels left out as the phone's rounded icon frames, and the letter
+// in the middle, KPadding pixels from the frame on every side; all in one colour.
 void CVnIndicator::Draw(const TRect& /*aRect*/) const
     {
     CWindowGc& gc = SystemGc();
@@ -162,15 +170,31 @@ void CVnIndicator::Draw(const TRect& /*aRect*/) const
     TRgb colour(KRgbWhite);
     AknsUtils::GetCachedColor(AknsUtils::SkinInstance(), colour, KAknsIIDQsnIconColors,
                               EAknsCIQsnIconColorsCG2);
-    gc.SetBrushStyle(CGraphicsContext::ENullBrush);
-    gc.SetPenStyle(CGraphicsContext::ESolidPen);
-    gc.SetPenColor(colour);
-    gc.DrawRoundRect(rect, TSize(2, 2));
-    const CFont* font = CEikonEnv::Static()->DenseFont();
-    gc.UseFont(font);
-    const TInt baseline = (rect.Height() - font->HeightInPixels()) / 2 + font->AscentInPixels();
-    gc.DrawText(iVietnamese ? KMarkV : KMarkE, rect, baseline, CGraphicsContext::ECenter, 0);
-    gc.DiscardFont();
+    gc.SetPenStyle(CGraphicsContext::ENullPen);
+    gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+    gc.SetBrushColor(colour);
+    const TInt s = iScale;
+    const TInt l = rect.iTl.iX;
+    const TInt t = rect.iTl.iY;
+    const TInt r = rect.iBr.iX;
+    const TInt b = rect.iBr.iY;
+    gc.DrawRect(TRect(l + s, t, r - s, t + s));     // top
+    gc.DrawRect(TRect(l + s, b - s, r - s, b));     // bottom
+    gc.DrawRect(TRect(l, t + s, l + s, b - s));     // left
+    gc.DrawRect(TRect(r - s, t + s, r, b - s));     // right
+    const TUint8* glyph = iVietnamese ? KGlyphV : KGlyphE;
+    const TInt x0 = l + (rect.Width() - KGlyphWidth * s) / 2;
+    const TInt y0 = t + (rect.Height() - KGlyphHeight * s) / 2;
+    for (TInt row = 0; row < KGlyphHeight; row++)
+        {
+        for (TInt col = 0; col < KGlyphWidth; col++)
+            {
+            if (glyph[row] & (0x10 >> col))
+                {
+                gc.DrawRect(TRect(TPoint(x0 + col * s, y0 + row * s), TSize(s, s)));
+                }
+            }
+        }
     }
 
 void CVnIndicator::HandleResourceChange(TInt aType)

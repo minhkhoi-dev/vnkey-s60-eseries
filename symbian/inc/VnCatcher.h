@@ -5,15 +5,20 @@
 #include <fepbase.h>
 #include <fepitfr.h>
 #include "VnTelex.h"
+#include "VnShared.h"
 
 class MCoeFepAwareTextEditor;
+class CVnIndicator;
 
 // What the catcher tells its owner.
 class MVnCatcherObserver
     {
 public:
     virtual void CatcherLog(const TDesC& aLine) = 0;          // one line for the test log
-    virtual void CatcherModeChanged(TBool aVietnamese) = 0;   // Ctrl+Space was pressed
+    // Vietnamese on or off: Ctrl+Space here, or the shared state changed elsewhere
+    virtual void CatcherModeChanged(TBool aVietnamese) = 0;
+    // The catcher is being deleted (in the plugin the app UI may do it, at the app's exit)
+    virtual void CatcherDestroyed() {}
     };
 
 // Telex in the editors of the application it lives in (CLAUDE.md "Design"). It sits on the
@@ -24,6 +29,10 @@ public:
 // engine with the word, which is rewritten in place; anything else (space, digit,
 // punctuation, Enter) ends the word: typing shortcuts and the restore of words that are not
 // Vietnamese. Ctrl+Space switches Vietnamese on and off and is the one key it keeps.
+//
+// It takes the state VnKey shares (TVnShared) at every key: on/off, the options and the
+// key log. In VnKey's own app it works without it; in the plugin it does nothing while
+// the state is not there (VnKey has not run since the phone started).
 class CVnCatcher : public CCoeControl, public MFepInlineTextFormatRetriever,
                    public MFepPointerEventHandlerDuringInlineEdit
     {
@@ -37,14 +46,21 @@ public:
         EMethodCount
         };
 
-    static CVnCatcher* NewL(MVnCatcherObserver& aObserver);
+    // aInPlugin: in another application, for VnKey's plugin. The app UI's control stack
+    // then owns the catcher and deletes it at the app's exit, unless the plugin goes
+    // first: it then calls Unstack() and deletes it.
+    static CVnCatcher* NewL(MVnCatcherObserver& aObserver, TBool aInPlugin = EFalse);
     ~CVnCatcher();
+    void Unstack();
+    // Takes the shared state when it changed. EFalse when the catcher is to do nothing.
+    TBool SyncShared();
 
     void SetVietnamese(TBool aOn);
     TBool Vietnamese() const { return iVietnamese; }
     void SetOptions(const TVnOptions& aOptions) { iEngine.SetOptions(aOptions); }
     const TVnOptions& Options() const { return iEngine.Options(); }
     TVnMacros& Macros() { return iMacros; }
+    TVnTriggers& Triggers() { return iTriggers; }
     void SetMethod(TMethod aMethod) { iMethod = aMethod; }
     TMethod Method() const { return iMethod; }
     void SetLogKeys(TBool aOn) { iLogKeys = aOn; }
@@ -54,13 +70,14 @@ public:
     TKeyResponse OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode aType);
 
 private:
-    CVnCatcher(MVnCatcherObserver& aObserver);
+    CVnCatcher(MVnCatcherObserver& aObserver, TBool aInPlugin);
     void ConstructL();
 
-    MCoeFepAwareTextEditor* Editor() const;
+    MCoeFepAwareTextEditor* Editor(TBool& aSecret) const;
     TBool IsSimulating() const;
     void LogKey(const TKeyEvent& aKeyEvent, TEventCode aType, MCoeFepAwareTextEditor* aEditor);
     void Snapshot(MCoeFepAwareTextEditor* aEditor, TInt aScanCode);
+    static void DisablePrediction(MCoeFepAwareTextEditor& aEditor);
     void SnapshotL(MCoeFepAwareTextEditor& aEditor, TInt aScanCode);
     static TInt ReadWordBefore(MCoeFepAwareTextEditor& aEditor, TInt aPos, TDes& aWord);
     static TBool WordCharAfter(MCoeFepAwareTextEditor& aEditor, TInt aPos);
@@ -94,7 +111,10 @@ private:
         };
 
     MVnCatcherObserver& iObserver;
+    TBool iInPlugin;
     TBool iStacked;
+    TBool iHaveShared;              // iSharedFlags holds the shared state last taken
+    TInt iSharedFlags;
     TBool iVietnamese;
     TBool iLogKeys;
     TBool iBusy;                    // rewriting a word: the catcher's own key events pass
@@ -102,6 +122,8 @@ private:
     TPending iPending;
     TVnTelex iEngine;
     TVnMacros iMacros;
+    TVnTriggers iTriggers;          // the keys that switch Vietnamese on and off
+    CVnIndicator* iIndicator;       // the [V]/[E] mark, in the plugin only (roadmap 3)
     CAsyncCallBack* iAsyncFlush;    // after AknFep has handled the release of the key
     MCoeFepAwareTextEditor* iInlineEditor;  // during an inline edit, for its format
     TInt iInlinePos;

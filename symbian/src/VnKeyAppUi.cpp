@@ -12,17 +12,30 @@
 #include "VnIndicator.h"
 #include "VnFepProbe.h"
 #include "VnLog.h"
+#include "VnShared.h"
 #include "VnKeyVersion.h"
 
 _LIT(KStartFmt, "VnKey %S start, log in %S");
 _LIT(KOptionsFmt, "options: vietnamese %d modern %d walone %d spell %d restore %d macros %d (%d) method %d logkeys %d");
-_LIT(KTitleFmt, "VnKey %S %S");
+_LIT(KTitleFmt, "VnKey %S %S%S");
+_LIT(KTitleAll, " all");
 _LIT(KModeV, "[V]");
 _LIT(KModeE, "[E]");
-_LIT(KMacroFile, "macros.txt");
-_LIT(KMacrosFmt, "macros: %d from %S");
-_LIT(KMacroBadFmt, "macros: line %d not taken");
+_LIT(KMacrosFmt, "macros: %d from %S, line %d not taken");
+_LIT(KTriggersFmt, "triggers: %d from %S, line %d not taken");
+_LIT(KReloaded, "Reloaded macros and triggers");
+_LIT(KSharedNewFmt, "shared state: defined, flags %02x");
+_LIT(KSharedOldFmt, "shared state: taken, flags %02x");
+_LIT(KSharedErrFmt, "shared state: error %d, VnKey alone");
+_LIT(KSwitchFmt, "system FEP: installing %08x");
+_LIT(KSwitchErrFmt, "system FEP: error %d");
+_LIT(KAllOn, "Telex in all apps: on. To turn it off, restart the phone, or use this menu again.");
+_LIT(KAllOff, "Telex in all apps: off.");
+_LIT(KAllErrFmt, "Not switched: error %d. See the log.");
+_LIT(KOffWarn, "Turning Telex off here may restart the phone. Restarting the phone turns it off safely. Turn off now anyway?");
+_LIT(KMenuAll, "Telex in all apps: %S");
 _LIT(KFepErrFmt, "fep check %d: error %d");
+_LIT(KLoadedFepFmt, "fep: now %08x in VnKey");
 _LIT(KOn, "on");
 _LIT(KOff, "off");
 
@@ -45,7 +58,17 @@ _LIT8(KSampleMacros,
       "dc \xC4\x91\xC6\xB0\xE1\xBB\xA3" "c\r\n"
       "vn Vi\xE1\xBB\x87" "t Nam\r\n");
 
-const TInt KMaxMacroFile = 16 * 1024;
+// Written to triggers.txt when there is none (ASCII).
+_LIT8(KSampleTriggers,
+      "# VnKey trigger keys: the key that switches Vietnamese on and off. One per line.\r\n"
+      "# Join modifiers and a key with +.  Modifiers: ctrl shift fn alt.\r\n"
+      "# Keys: space enter tab bksp, or a scan code like 0x5f.\r\n"
+      "# Turn on 'Log every key' to read a key's scan code from the log.\r\n"
+      "ctrl+space\r\n"
+      "# Add more lines for more trigger keys, for example:\r\n"
+      "# shift+space\r\n"
+      "# fn+space\r\n");
+
 const TInt KMaxLogSent = 1024 * 1024; // the last megabyte of the log at most
 
 _LIT(KSendFmt, "send log: to %S, %d bytes");
@@ -76,6 +99,14 @@ void CVnKeyAppUi::ConstructL()
         line.Format(_L("macros: error %d"), err);
         iLog->Write(line);
         }
+    TRAP(err, LoadTriggersL());
+    if (err != KErrNone)
+        {
+        line.Format(_L("triggers: error %d"), err);
+        iLog->Write(line);
+        }
+    ShareState();
+    iCoeEnv->AddObserverOfLoadedFepL(*this);
     ShowModeL();
     LogOptions();
     LogIndicator();
@@ -85,6 +116,7 @@ void CVnKeyAppUi::ConstructL()
 
 CVnKeyAppUi::~CVnKeyAppUi()
     {
+    iCoeEnv->RemoveObserverOfLoadedFep(*this);
     delete iSender;
     delete iCatcher; // takes itself off the control stack
     delete iIndicator;
@@ -113,6 +145,21 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             iCatcher->SetVietnamese(!iCatcher->Vietnamese());
             ShowModeL();
             break;
+        case EVnCmdSystemFep:
+            {
+            const TBool turnOn = !SystemFepIsVnKey();
+            if (!turnOn)
+                {
+                CAknQueryDialog* dlg = CAknQueryDialog::NewL();
+                dlg->SetPromptL(KOffWarn);
+                if (!dlg->ExecuteLD(R_VNKEY_OFF_QUERY))
+                    {
+                    return;
+                    }
+                }
+            SwitchSystemFepL(turnOn);
+            return;
+            }
         case EVnCmdTone:
             options.iModernTone = !options.iModernTone;
             break;
@@ -148,6 +195,14 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             iView->ClearL();
             iLog->Write(_L("--- text cleared"));
             return;
+        case EVnCmdReload:
+            {
+            TRAPD(rerr, LoadMacrosL());
+            TRAP(rerr, LoadTriggersL());
+            CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote;
+            note->ExecuteLD(KReloaded);
+            return;
+            }
         case EVnCmdSendLog:
             SendLogL();
             return;
@@ -165,6 +220,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             return;
         }
     iCatcher->SetOptions(options);
+    PublishState();
     LogOptions();
     }
 
@@ -186,6 +242,7 @@ void CVnKeyAppUi::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
         }
     const TVnOptions& o = iCatcher->Options();
     SetItemL(aMenuPane, EVnCmdToggle, KMenuVietnamese, iCatcher->Vietnamese() ? &KOn : &KOff);
+    SetItemL(aMenuPane, EVnCmdSystemFep, KMenuAll, SystemFepIsVnKey() ? &KOn : &KOff);
     SetItemL(aMenuPane, EVnCmdTone, KMenuTone, o.iModernTone ? &KToneModern : &KToneTraditional);
     SetItemL(aMenuPane, EVnCmdWAlone, KMenuWAlone, o.iWAlone ? &KOn : &KOff);
     SetItemL(aMenuPane, EVnCmdSpell, KMenuSpell, o.iSpellCheck ? &KOn : &KOff);
@@ -204,18 +261,115 @@ void CVnKeyAppUi::HandleStatusPaneSizeChange()
         }
     }
 
+// Back in front: Ctrl+Space in another application may have changed the state.
+void CVnKeyAppUi::HandleForegroundEventL(TBool aForeground)
+    {
+    CAknAppUi::HandleForegroundEventL(aForeground);
+    if (aForeground && iCatcher)
+        {
+        iCatcher->SyncShared();
+        ShowModeL();
+        }
+    }
+
+// CONE loaded a FEP in VnKey: at the start (some time after ConstructL) and after
+// Telex in all apps switched the system's FEP.
+void CVnKeyAppUi::HandleChangeInLoadedFep()
+    {
+    TBuf<40> line;
+    line.Format(KLoadedFepFmt, iCoeEnv->FepUid().iUid);
+    iLog->Write(line);
+    TRAP_IGNORE(ShowModeL());
+    }
+
 void CVnKeyAppUi::CatcherLog(const TDesC& aLine)
     {
     iLog->Write(aLine);
     }
 
-void CVnKeyAppUi::CatcherModeChanged(TBool aVietnamese)
+void CVnKeyAppUi::CatcherModeChanged(TBool /*aVietnamese*/)
     {
-    iLog->Write(aVietnamese ? _L("Ctrl+Space: Vietnamese") : _L("Ctrl+Space: English"));
     TRAP_IGNORE(ShowModeL());
     }
 
-// The indicator and the title: "VnKey [V] m1".
+// The shared state (TVnShared): defined with VnKey's own state at the first start since
+// the phone started; taken from it when VnKey ran before.
+void CVnKeyAppUi::ShareState()
+    {
+    TBuf<60> line;
+    TInt err = TVnShared::Define();
+    if (err == KErrNone)
+        {
+        PublishState();
+        TInt flags = 0;
+        TVnShared::Get(flags);
+        line.Format(KSharedNewFmt, flags);
+        }
+    else if (err == KErrAlreadyExists)
+        {
+        iCatcher->SyncShared();
+        TInt flags = 0;
+        TVnShared::Get(flags);
+        line.Format(KSharedOldFmt, flags);
+        }
+    else
+        {
+        line.Format(KSharedErrFmt, err);
+        }
+    iLog->Write(line);
+    }
+
+// VnKey's state and options to every application.
+void CVnKeyAppUi::PublishState()
+    {
+    TVnShared::Set(TVnShared::Encode(iCatcher->Vietnamese(), iCatcher->Options(), iCatcher->LogKeys(),
+                                     iCatcher->Method()));
+    }
+
+TBool CVnKeyAppUi::SystemFepIsVnKey() const
+    {
+    // Our own record: FepUid() stays AknFep's in VnKey's own process even after the
+    // switch, and the setting does not survive a reboot (so this starts off, matching
+    // the phone, which comes back as AknFep).
+    return iSystemFepOn;
+    }
+
+// Telex in all apps: the system's FEP becomes VnKey's plugin, or AknFep again. CONE then
+// loads the new one in every running application. The setting does not survive a reboot
+// (it comes back as AknFep), which is the safe way to turn it off.
+void CVnKeyAppUi::SwitchSystemFepL(TBool aOn)
+    {
+    TBuf<80> line;
+    const TUid uid = aOn ? KVnFepImplUid : KVnAknFepUid;
+    line.Format(KSwitchFmt, uid.iUid);
+    iLog->Write(line);
+    TRAPD(err, iCoeEnv->InstallFepL(uid));
+    if (err == KErrNone)
+        {
+        iSystemFepOn = aOn;
+        }
+    else
+        {
+        line.Format(KSwitchErrFmt, err);
+        iLog->Write(line);
+        }
+    RunFepCheck(EVnCmdFepList);
+    ShowModeL();
+    if (err == KErrNone)
+        {
+        CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
+        note->ExecuteLD(aOn ? KAllOn() : KAllOff());
+        }
+    else
+        {
+        TBuf<60> text;
+        text.Format(KAllErrFmt, err);
+        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
+        note->ExecuteLD(text);
+        }
+    }
+
+// The indicator and the title: "VnKey [V] m1", and "all" while Telex in all apps is on.
 void CVnKeyAppUi::ShowModeL()
     {
     const TBool on = iCatcher->Vietnamese();
@@ -223,7 +377,7 @@ void CVnKeyAppUi::ShowModeL()
     TBuf<8> method;
     method.Format(_L("m%d"), iCatcher->Method() + 1);
     TBuf<40> title;
-    title.Format(KTitleFmt, on ? &KModeV : &KModeE, &method);
+    title.Format(KTitleFmt, on ? &KModeV : &KModeE, &method, SystemFepIsVnKey() ? &KTitleAll : &KNullDesC);
     CAknTitlePane* pane = static_cast<CAknTitlePane*>(StatusPane()->ControlL(TUid::Uid(EEikStatusPaneUidTitle)));
     pane->SetTextL(title);
     }
@@ -245,75 +399,21 @@ void CVnKeyAppUi::LogIndicator()
     iLog->Write(line);
     }
 
-// macros.txt next to the log, UTF-8: per line a key, a space or tab, and the text; lines
-// that start with # are comments. A sample is written when there is no file.
+// macros.txt next to the log (VnFiles::LoadMacrosL); a sample is written when there is
+// none. The plugin reads the same file in every application.
 void CVnKeyAppUi::LoadMacrosL()
     {
     TFileName name(iLog->Folder());
-    name.Append(KMacroFile);
-    RFs& fs = iLog->Fs();
-    RFile file;
-    TInt err = file.Open(fs, name, EFileRead | EFileShareReadersOnly);
-    if (err == KErrNotFound)
+    name.Append(KVnMacroFile);
+    TEntry entry;
+    if (iLog->Fs().Entry(name, entry) == KErrNotFound)
         {
         WriteSampleMacrosL(name);
-        err = file.Open(fs, name, EFileRead | EFileShareReadersOnly);
         }
-    User::LeaveIfError(err);
-    CleanupClosePushL(file);
-    TInt size = 0;
-    User::LeaveIfError(file.Size(size));
-    HBufC8* raw = HBufC8::NewLC(Min(size, KMaxMacroFile));
-    TPtr8 rawPtr(raw->Des());
-    User::LeaveIfError(file.Read(rawPtr));
-    HBufC* text = HBufC::NewLC(rawPtr.Length());
-    TPtr textPtr(text->Des());
-    CnvUtfConverter::ConvertToUnicodeFromUtf8(textPtr, rawPtr);
-
-    TVnMacros& macros = iCatcher->Macros();
-    macros.Reset();
-    TPtrC rest(textPtr);
-    TInt lineNo = 0;
-    while (rest.Length() > 0)
-        {
-        ++lineNo;
-        TInt end = rest.Locate('\n');
-        TPtrC line(end < 0 ? rest : rest.Left(end));
-        rest.Set(end < 0 ? TPtrC() : rest.Mid(end + 1));
-        if (line.Length() > 0 && line[line.Length() - 1] == '\r')
-            {
-            line.Set(line.Left(line.Length() - 1));
-            }
-        if (line.Length() > 0 && line[0] == 0xFEFF)
-            {
-            line.Set(line.Mid(1)); // a byte order mark
-            }
-        if (line.Length() == 0 || line[0] == '#')
-            {
-            continue;
-            }
-        TInt gap = 0;
-        while (gap < line.Length() && line[gap] != ' ' && line[gap] != '\t')
-            {
-            ++gap;
-            }
-        TInt value = gap;
-        while (value < line.Length() && (line[value] == ' ' || line[value] == '\t'))
-            {
-            ++value;
-            }
-        TPtrC key(line.Left(gap));
-        TPtrC val(line.Mid(value));
-        if (!macros.Add(key.Ptr(), key.Length(), val.Ptr(), val.Length()))
-            {
-            TBuf<40> bad;
-            bad.Format(KMacroBadFmt, lineNo);
-            iLog->Write(bad);
-            }
-        }
-    CleanupStack::PopAndDestroy(3, &file); // text, raw, file
+    TInt bad = 0;
+    VnFiles::LoadMacrosL(iLog->Fs(), name, iCatcher->Macros(), bad);
     TBuf<200> line;
-    line.Format(KMacrosFmt, macros.Count(), &name);
+    line.Format(KMacrosFmt, iCatcher->Macros().Count(), &name, bad);
     iLog->Write(line);
     }
 
@@ -323,6 +423,33 @@ void CVnKeyAppUi::WriteSampleMacrosL(const TDesC& aName)
     User::LeaveIfError(file.Create(iLog->Fs(), aName, EFileWrite));
     CleanupClosePushL(file);
     User::LeaveIfError(file.Write(KSampleMacros));
+    CleanupStack::PopAndDestroy(&file);
+    }
+
+// triggers.txt next to the log (VnFiles::LoadTriggersL); a sample is written when there is
+// none. The plugin reads the same file in every application.
+void CVnKeyAppUi::LoadTriggersL()
+    {
+    TFileName name(iLog->Folder());
+    name.Append(KVnTriggerFile);
+    TEntry entry;
+    if (iLog->Fs().Entry(name, entry) == KErrNotFound)
+        {
+        WriteSampleTriggersL(name);
+        }
+    TInt bad = 0;
+    VnFiles::LoadTriggersL(iLog->Fs(), name, iCatcher->Triggers(), bad);
+    TBuf<200> line;
+    line.Format(KTriggersFmt, iCatcher->Triggers().Count(), &name, bad);
+    iLog->Write(line);
+    }
+
+void CVnKeyAppUi::WriteSampleTriggersL(const TDesC& aName)
+    {
+    RFile file;
+    User::LeaveIfError(file.Create(iLog->Fs(), aName, EFileWrite));
+    CleanupClosePushL(file);
+    User::LeaveIfError(file.Write(KSampleTriggers));
     CleanupStack::PopAndDestroy(&file);
     }
 

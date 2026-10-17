@@ -1,15 +1,20 @@
 #include <badesca.h>
+#include <centralrepository.h>
+#include <coedef.h>
 #include <coemain.h>
 #include <ecom/ecom.h>
 #include <fepbase.h>
 #include <fepplugin.h>
 #include "VnFepProbe.h"
 #include "VnLog.h"
+#include "VnShared.h"
 
 _LIT(KLoadedFmt, "fep: loaded uid %08x, object %S");
 _LIT(KImplFmt, "fep impl %08x v%d drive %c rom %d: %S");
 _LIT(KCountFmt, "fep: %d implementations of %08x");
 _LIT(KAvailFmt, "fep available %08x: %S");
+_LIT(KSystemFmt, "fep: system setting %08x, default %08x");
+_LIT(KSystemErrFmt, "fep: system setting not read, error %d");
 _LIT(KYes, "yes");
 _LIT(KNo, "none");
 
@@ -55,6 +60,24 @@ void VnFepProbe::ListL(CCoeEnv& aEnv, CVnLog& aLog)
         aLog.Write(line);
         }
     CleanupStack::PopAndDestroy(2, &uids); // names, uids
+
+    // what InstallFepL writes (the dynamic setting) and what the phone came with
+    TInt current = 0;
+    TInt preset = 0;
+    TRAPD(err,
+        CRepository* repository = CRepository::NewLC(TUid::Uid(KUidFepFrameworkRepository));
+        User::LeaveIfError(repository->Get(ERepositoryKey_DynamicFepId, current));
+        repository->Get(ERepositoryKey_DefaultFepId, preset);
+        CleanupStack::PopAndDestroy(repository));
+    if (err == KErrNone)
+        {
+        line.Format(KSystemFmt, current, preset);
+        }
+    else
+        {
+        line.Format(KSystemErrFmt, err);
+        }
+    aLog.Write(line);
     }
 
 // The UID of the FEP this application runs, or, while CONE has not loaded it yet (it does

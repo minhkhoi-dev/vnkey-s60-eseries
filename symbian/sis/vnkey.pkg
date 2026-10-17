@@ -10,6 +10,13 @@
 ; S60 3rd Edition FP2 (E72)
 [0x102752AE], 0, 0, 0, {"S60ProductID"}
 
-"$(EPOCROOT)epoc32/release/gcce/urel/vnkey.exe"-"!:\sys\bin\vnkey.exe"
-"$(EPOCROOT)epoc32/data/z/resource/apps/vnkey.rsc"-"!:\resource\apps\vnkey.rsc"
-"$(EPOCROOT)epoc32/data/z/private/10003a3f/apps/vnkey_reg.rsc"-"!:\private\10003a3f\import\apps\vnkey_reg.rsc"
+; Everything on the phone's memory (C:), none of it on the memory card: with the card
+; out, the system's FEP (the plugin, when it is switched on) and VnKey, which switches it
+; back, must still be there.
+"$(EPOCROOT)epoc32/release/gcce/urel/vnkey.exe"-"c:\sys\bin\vnkey.exe"
+"$(EPOCROOT)epoc32/data/z/resource/apps/vnkey.rsc"-"c:\resource\apps\vnkey.rsc"
+"$(EPOCROOT)epoc32/data/z/private/10003a3f/apps/vnkey_reg.rsc"-"c:\private\10003a3f\import\apps\vnkey_reg.rsc"
+
+; The FEP plugin (roadmap 2)
+"$(EPOCROOT)epoc32/release/gcce/urel/vnkeyfep.dll"-"c:\sys\bin\vnkeyfep.dll"
+"$(EPOCROOT)epoc32/data/z/resource/plugins/vnkeyfep.rsc"-"c:\resource\plugins\vnkeyfep.rsc"

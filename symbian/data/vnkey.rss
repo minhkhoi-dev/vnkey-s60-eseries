@@ -28,6 +28,7 @@ RESOURCE MENU_PANE r_vnkey_menu
     items =
         {
         MENU_ITEM { command = EVnCmdToggle;         txt = "Vietnamese"; },
+        MENU_ITEM { command = EVnCmdSystemFep;      txt = "Telex in all apps"; },
         MENU_ITEM { command = EVnCmdTone;           txt = "Tone"; },
         MENU_ITEM { command = EVnCmdWAlone;         txt = "w alone"; },
         MENU_ITEM { command = EVnCmdSpell;          txt = "Spell check"; },
@@ -40,9 +41,26 @@ RESOURCE MENU_PANE r_vnkey_menu
         MENU_ITEM { command = EVnCmdFepLoad;        txt = "FEP check 2: load plugin"; },
         MENU_ITEM { command = EVnCmdFepCreate;      txt = "FEP check 3: second FEP"; },
         MENU_ITEM { command = EVnCmdClear;          txt = "Clear text"; },
+        MENU_ITEM { command = EVnCmdReload;         txt = "Reload macros/triggers"; },
         MENU_ITEM { command = EVnCmdSendLog;        txt = "Send log"; },
         MENU_ITEM { command = EVnCmdClearLog;       txt = "Clear log"; },
         MENU_ITEM { command = EAknSoftkeyExit;      txt = "Exit"; }
+        };
+    }
+
+// Options > Telex in all apps, to off: warns that it may restart the phone.
+RESOURCE DIALOG r_vnkey_off_query
+    {
+    flags = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtQuery;
+            id = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY { layout = EConfirmationQueryLayout; };
+            }
         };
     }
 

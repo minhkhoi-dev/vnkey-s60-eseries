@@ -5,7 +5,10 @@
 #include <frmtlay.h>
 #include <txtfrmat.h>
 #include <aknedsts.h>
+#include <eikspane.h>
 #include "VnCatcher.h"
+#include "VnIndicator.h"
+#include "VnShared.h"
 
 // Just above the phone's FEP (ECoeStackPriorityFep), below the environment filter.
 const TInt KStackPriority = ECoeStackPriorityFep + 1;
@@ -43,34 +46,102 @@ static TBool IsAsciiLetter(TUint aCode)
     return (aCode >= 'a' && aCode <= 'z') || (aCode >= 'A' && aCode <= 'Z');
     }
 
-CVnCatcher* CVnCatcher::NewL(MVnCatcherObserver& aObserver)
+CVnCatcher* CVnCatcher::NewL(MVnCatcherObserver& aObserver, TBool aInPlugin)
     {
-    CVnCatcher* self = new (ELeave) CVnCatcher(aObserver);
+    CVnCatcher* self = new (ELeave) CVnCatcher(aObserver, aInPlugin);
     CleanupStack::PushL(self);
     self->ConstructL();
     CleanupStack::Pop(self);
     return self;
     }
 
-CVnCatcher::CVnCatcher(MVnCatcherObserver& aObserver)
-    : iObserver(aObserver), iVietnamese(ETrue), iLogKeys(ETrue), iMethod(EMethodInline)
+CVnCatcher::CVnCatcher(MVnCatcherObserver& aObserver, TBool aInPlugin)
+    : iObserver(aObserver), iInPlugin(aInPlugin), iVietnamese(ETrue), iLogKeys(!aInPlugin),
+      iMethod(EMethodKeys)  // m3: backspaces + retype, the one that works over AknFep in apps
     {
     }
 
 void CVnCatcher::ConstructL()
     {
     iAsyncFlush = new (ELeave) CAsyncCallBack(TCallBack(AsyncFlush, this), CActive::EPriorityStandard);
-    iCoeEnv->AppUi()->AddToStackL(this, KStackPriority, ECoeStackFlagRefusesFocus | ECoeStackFlagSharable);
+    CCoeAppUi* appUi = iCoeEnv->AppUi();
+    if (!appUi)
+        {
+        User::Leave(KErrNotReady);
+        }
+    // In another application the stack owns it, so that it is deleted with the app UI
+    // whichever of the two CONE deletes first, the app UI or the plugin. Not shared with
+    // an embedded app UI: two stacks owning one control could delete it twice.
+    const TInt flags = iInPlugin ? ECoeStackFlagRefusesFocus | ECoeStackFlagOwnershipTransfered
+                                 : ECoeStackFlagRefusesFocus | ECoeStackFlagSharable;
+    appUi->AddToStackL(this, KStackPriority, flags);
     iStacked = ETrue;
+    // The [V]/[E] mark in every application the plugin runs in, but only where there is a
+    // status pane to sit in (a normal, non-fullscreen application; not a server or a game).
+    // Its window belongs to this application; the app UI's control stack deletes the catcher
+    // while the window group is still alive, so the indicator window is freed safely.
+    if (iInPlugin && CEikStatusPaneBase::Current())
+        {
+        TRAP_IGNORE(iIndicator = CVnIndicator::NewL());
+        if (iIndicator)
+            {
+            iIndicator->SetVietnamese(iVietnamese);
+            }
+        }
     }
 
 CVnCatcher::~CVnCatcher()
     {
     delete iAsyncFlush;
-    if (iStacked && iCoeEnv->AppUi())
+    delete iIndicator;
+    // in the plugin the stack deletes it, or the plugin after Unstack()
+    if (!iInPlugin)
         {
-        iCoeEnv->AppUi()->RemoveFromStack(this);
+        Unstack();
         }
+    iObserver.CatcherDestroyed();
+    }
+
+void CVnCatcher::Unstack()
+    {
+    CCoeAppUi* appUi = iCoeEnv->AppUi();
+    if (iStacked && appUi)
+        {
+        appUi->RemoveFromStack(this);
+        }
+    iStacked = EFalse;
+    }
+
+TBool CVnCatcher::SyncShared()
+    {
+    TInt flags = 0;
+    if (!TVnShared::Get(flags))
+        {
+        return !iInPlugin;
+        }
+    if (iHaveShared && flags == iSharedFlags)
+        {
+        return ETrue;
+        }
+    TBool vietnamese = EFalse;
+    TBool logKeys = EFalse;
+    TInt method = EMethodInline;
+    TVnOptions options;
+    TVnShared::Decode(flags, vietnamese, options, logKeys, method);
+    iEngine.SetOptions(options);
+    iLogKeys = logKeys;
+    if (method >= 0 && method < EMethodCount)
+        {
+        iMethod = static_cast<TMethod>(method);
+        }
+    iSharedFlags = flags;
+    iHaveShared = ETrue;
+    if (vietnamese != iVietnamese)
+        {
+        SetVietnamese(vietnamese);
+        iObserver.CatcherModeChanged(vietnamese);
+        }
+    return ETrue;
     }
 
 void CVnCatcher::SetVietnamese(TBool aOn)
@@ -79,11 +150,17 @@ void CVnCatcher::SetVietnamese(TBool aOn)
     iPending.iActive = EFalse;
     iPending.iSnap = EFalse;
     iEngine.Reset();
+    if (iIndicator)
+        {
+        iIndicator->SetVietnamese(aOn);
+        }
     }
 
-// The editor that has the focus, if it takes a FEP's help; never a password field.
-MCoeFepAwareTextEditor* CVnCatcher::Editor() const
+// The editor that has the focus, if it takes a FEP's help; never a password field
+// (aSecret: the keys are not even logged).
+MCoeFepAwareTextEditor* CVnCatcher::Editor(TBool& aSecret) const
     {
+    aSecret = EFalse;
     CCoeAppUi* appUi = iCoeEnv->AppUi();
     if (!appUi)
         {
@@ -92,6 +169,7 @@ MCoeFepAwareTextEditor* CVnCatcher::Editor() const
     const TCoeInputCapabilities caps(appUi->InputCapabilities());
     if (caps.SupportsSecretText())
         {
+        aSecret = ETrue;
         return NULL;
         }
     return caps.FepAwareTextEditor();
@@ -110,12 +188,13 @@ TBool CVnCatcher::IsSimulating() const
 
 TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode aType)
     {
-    if (IsSimulating())
+    if (IsSimulating() || !SyncShared())
         {
         return EKeyWasNotConsumed;
         }
-    MCoeFepAwareTextEditor* editor = Editor();
-    if (iLogKeys)
+    TBool secret = EFalse;
+    MCoeFepAwareTextEditor* editor = Editor(secret);
+    if (iLogKeys && !secret)
         {
         LogKey(aKeyEvent, aType, editor);
         }
@@ -141,10 +220,18 @@ TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode a
         }
 
     Flush();
-    if ((aKeyEvent.iModifiers & EModifierCtrl)
-        && (aKeyEvent.iScanCode == EStdKeySpace || aKeyEvent.iCode == ' '))
+    if (iTriggers.Matches(aKeyEvent.iModifiers, aKeyEvent.iScanCode))
         {
         SetVietnamese(!iVietnamese);
+        Log(iVietnamese ? _L("Ctrl+Space: Vietnamese") : _L("Ctrl+Space: English"));
+        TInt flags = 0;
+        if (TVnShared::Get(flags))
+            {
+            // every application takes it at its next key
+            flags = iVietnamese ? flags | TVnShared::EVietnamese : flags & ~TVnShared::EVietnamese;
+            TVnShared::Set(flags);
+            iSharedFlags = flags;
+            }
         iObserver.CatcherModeChanged(iVietnamese);
         return EKeyWasConsumed;
         }
@@ -235,6 +322,32 @@ TBool CVnCatcher::WordCharAfter(MCoeFepAwareTextEditor& aEditor, TInt aPos)
     return after.Length() > 0 && TVnTelex::IsWordChar(after[0]);
     }
 
+// With Vietnamese on, AknFep's predictive entry (the underlined, uncommitted word) must be
+// off: it keeps an inline edit open on the word, and the catcher's rewrite then collides
+// with it and crashes the application (2026-10-17, Khoi: autocorrect on = crash, off = fine).
+// Telex and English prediction do not go together anyway. Set once per editor focus; not
+// restored when switched to English (the editor gets it back when it is reopened).
+void CVnCatcher::DisablePrediction(MCoeFepAwareTextEditor& aEditor)
+    {
+    MCoeFepAwareTextEditor_Extension1* ext = aEditor.Extension1();
+    if (!ext)
+        {
+        return;
+        }
+    CAknEdwinState* state = static_cast<CAknEdwinState*>(ext->State(KNullUid));
+    if (!state)
+        {
+        return;
+        }
+    const TInt flags = state->Flags();
+    if (flags & EAknEditorFlagNoT9)
+        {
+        return;
+        }
+    state->SetFlags(flags | EAknEditorFlagNoT9);
+    TRAP_IGNORE(state->ReportAknEdStateEventL(MAknEdStateObserver::EAknEdwinStateFlagsUpdate));
+    }
+
 void CVnCatcher::Snapshot(MCoeFepAwareTextEditor* aEditor, TInt aScanCode)
     {
     iPending.iActive = EFalse;
@@ -243,6 +356,7 @@ void CVnCatcher::Snapshot(MCoeFepAwareTextEditor* aEditor, TInt aScanCode)
         {
         return;
         }
+    DisablePrediction(*aEditor);
     TRAPD(err, SnapshotL(*aEditor, aScanCode));
     if (err != KErrNone)
         {
@@ -299,7 +413,8 @@ void CVnCatcher::Flush()
 void CVnCatcher::FlushL()
     {
     iPending.iActive = EFalse;
-    MCoeFepAwareTextEditor* editor = Editor();
+    TBool secret = EFalse;
+    MCoeFepAwareTextEditor* editor = Editor(secret);
     if (!editor || editor != iPending.iEditor)
         {
         Log(_L("flush: another editor"));
