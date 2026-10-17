@@ -38,8 +38,11 @@ private:
     void ShowModeL();
     void ShareState();
     void PublishState();
+    void LoadSettingsL();           // the saved options, state and FEP preference, at start
+    void SaveSettings();            // write them after any change (does not leave)
     TBool SystemFepIsVnKey() const;
-    void SwitchSystemFepL(TBool aOn);
+    // aAnnounce: show the confirmation note (a menu switch); EFalse restores it silently.
+    void SwitchSystemFepL(TBool aOn, TBool aAnnounce);
     void LoadMacrosL();
     void WriteSampleMacrosL(const TDesC& aName);
     void LoadTriggersL();
@@ -56,7 +59,9 @@ private:
     CVnIndicator* iIndicator;
     CVnLogSender* iSender;
     TBuf<60> iLogServer;    // address:port of the web stub, last used
-    TBool iSystemFepOn;     // Telex in all apps: VnKey installed its plugin as the FEP
+    TBool iSystemFepOn;     // Telex in all apps: the plugin is the system FEP now
+    TBool iFepDesired;      // the saved preference: Telex in all apps on or off
+    TBool iFepRestoreTried; // the start-up restore of the FEP has been attempted
     };
 
 #endif // VNKEYAPPUI_H

@@ -24,8 +24,8 @@ _LIT(KModeE, "[E]");
 _LIT(KMacrosFmt, "macros: %d from %S, line %d not taken");
 _LIT(KTriggersFmt, "triggers: %d from %S, line %d not taken");
 _LIT(KReloaded, "Reloaded macros and triggers");
-_LIT(KSharedNewFmt, "shared state: defined, flags %02x");
-_LIT(KSharedOldFmt, "shared state: taken, flags %02x");
+_LIT(KSharedNewFmt, "shared state: defined, flags %03x");
+_LIT(KSharedOldFmt, "shared state: taken, flags %03x");
 _LIT(KSharedErrFmt, "shared state: error %d, VnKey alone");
 _LIT(KSwitchFmt, "system FEP: installing %08x");
 _LIT(KSwitchErrFmt, "system FEP: error %d");
@@ -78,6 +78,12 @@ _LIT(KSentBadFmt, "Log not sent: error %d %S");
 _LIT(KSending, "Sending the log");
 _LIT(KBusy, "Still sending the log");
 _LIT(KLogCleared, "Log cleared");
+_LIT(KSettingsFile, "settings.txt");
+_LIT(KSettingsLoaded, "settings: flags %d, place %d, system %d, server %S");
+_LIT8(KFlagsKey, "flags");
+_LIT8(KPlaceKey, "place");
+_LIT8(KSystemKey, "system");
+_LIT8(KServerKey, "logserver");
 
 void CVnKeyAppUi::ConstructL()
     {
@@ -103,6 +109,12 @@ void CVnKeyAppUi::ConstructL()
     if (err != KErrNone)
         {
         line.Format(_L("triggers: error %d"), err);
+        iLog->Write(line);
+        }
+    TRAP(err, LoadSettingsL());
+    if (err != KErrNone)
+        {
+        line.Format(_L("settings: error %d"), err);
         iLog->Write(line);
         }
     ShareState();
@@ -157,7 +169,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
                     return;
                     }
                 }
-            SwitchSystemFepL(turnOn);
+            SwitchSystemFepL(turnOn, ETrue);
             return;
             }
         case EVnCmdTone:
@@ -182,6 +194,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
         case EVnCmdIndicatorPlace:
             iIndicator->SetPlace(iIndicator->Place() + 1);
             LogIndicator();
+            SaveSettings();
             return;
         case EVnCmdLogKeys:
             iCatcher->SetLogKeys(!iCatcher->LogKeys());
@@ -221,6 +234,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
         }
     iCatcher->SetOptions(options);
     PublishState();
+    SaveSettings();
     LogOptions();
     }
 
@@ -269,6 +283,7 @@ void CVnKeyAppUi::HandleForegroundEventL(TBool aForeground)
         {
         iCatcher->SyncShared();
         ShowModeL();
+        SaveSettings(); // a Ctrl+Space in another application may have changed the state
         }
     }
 
@@ -279,6 +294,15 @@ void CVnKeyAppUi::HandleChangeInLoadedFep()
     TBuf<40> line;
     line.Format(KLoadedFepFmt, iCoeEnv->FepUid().iUid);
     iLog->Write(line);
+    iSystemFepOn = iCoeEnv->FepUid() == KVnFepImplUid;
+    // At start, when the saved preference is on but the phone came back as AknFep (the FEP
+    // setting is not kept over a reboot), put the plugin back as the system FEP, once.
+    if (iFepDesired && !iSystemFepOn && !iFepRestoreTried)
+        {
+        iFepRestoreTried = ETrue;
+        iLog->Write(_L("settings: restoring Telex in all apps"));
+        TRAP_IGNORE(SwitchSystemFepL(ETrue, EFalse));
+        }
     TRAP_IGNORE(ShowModeL());
     }
 
@@ -337,7 +361,7 @@ TBool CVnKeyAppUi::SystemFepIsVnKey() const
 // Telex in all apps: the system's FEP becomes VnKey's plugin, or AknFep again. CONE then
 // loads the new one in every running application. The setting does not survive a reboot
 // (it comes back as AknFep), which is the safe way to turn it off.
-void CVnKeyAppUi::SwitchSystemFepL(TBool aOn)
+void CVnKeyAppUi::SwitchSystemFepL(TBool aOn, TBool aAnnounce)
     {
     TBuf<80> line;
     const TUid uid = aOn ? KVnFepImplUid : KVnAknFepUid;
@@ -347,6 +371,8 @@ void CVnKeyAppUi::SwitchSystemFepL(TBool aOn)
     if (err == KErrNone)
         {
         iSystemFepOn = aOn;
+        iFepDesired = aOn;  // the saved preference, restored at the next start
+        SaveSettings();
         }
     else
         {
@@ -355,6 +381,10 @@ void CVnKeyAppUi::SwitchSystemFepL(TBool aOn)
         }
     RunFepCheck(EVnCmdFepList);
     ShowModeL();
+    if (!aAnnounce)
+        {
+        return; // the start-up restore is silent
+        }
     if (err == KErrNone)
         {
         CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
@@ -367,6 +397,102 @@ void CVnKeyAppUi::SwitchSystemFepL(TBool aOn)
         CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
         note->ExecuteLD(text);
         }
+    }
+
+// The saved settings in settings.txt next to the log (key=value, ASCII): the options and
+// state packed as the shared flags, the indicator place, the Telex-in-all-apps preference
+// and the log server. Absent at the first run (saved on the first change). Does not touch
+// the catcher's shortcuts or triggers (their own files).
+void CVnKeyAppUi::LoadSettingsL()
+    {
+    TFileName name(iLog->Folder());
+    name.Append(KSettingsFile);
+    RFile file;
+    if (file.Open(iLog->Fs(), name, EFileRead | EFileShareReadersOnly) != KErrNone)
+        {
+        return; // no file yet: the built-in defaults stand
+        }
+    CleanupClosePushL(file);
+    TInt size = 0;
+    User::LeaveIfError(file.Size(size));
+    HBufC8* raw = HBufC8::NewLC(Min(size, 1024));
+    TPtr8 rawPtr(raw->Des());
+    User::LeaveIfError(file.Read(rawPtr));
+
+    TInt flags = 0;
+    TInt place = 0;
+    TBool system = EFalse;
+    TBuf<60> server(iLogServer);
+    TPtrC8 rest(rawPtr);
+    while (rest.Length() > 0)
+        {
+        TInt end = rest.Locate('\n');
+        TPtrC8 ln(end < 0 ? rest : rest.Left(end));
+        rest.Set(end < 0 ? TPtrC8() : rest.Mid(end + 1));
+        TInt eq = ln.Locate('=');
+        if (eq < 0)
+            {
+            continue;
+            }
+        TPtrC8 key(ln.Left(eq));
+        TPtrC8 val(ln.Mid(eq + 1));
+        while (val.Length() > 0 && (val[val.Length() - 1] == '\r' || val[val.Length() - 1] == ' '))
+            {
+            val.Set(val.Left(val.Length() - 1));
+            }
+        TLex8 lex(val);
+        if (key == KFlagsKey) { lex.Val(flags); }
+        else if (key == KPlaceKey) { lex.Val(place); }
+        else if (key == KSystemKey) { TInt v = 0; lex.Val(v); system = v != 0; }
+        else if (key == KServerKey && val.Length() <= server.MaxLength()) { server.Copy(val); }
+        }
+    CleanupStack::PopAndDestroy(2, &file); // raw, file
+
+    TBool vietnamese = ETrue;
+    TBool logKeys = EFalse;
+    TInt method = CVnCatcher::EMethodKeys;
+    TVnOptions options;
+    TVnShared::Decode(flags, vietnamese, options, logKeys, method);
+    iCatcher->SetOptions(options);
+    iCatcher->SetVietnamese(vietnamese);
+    iCatcher->SetLogKeys(logKeys);
+    if (method >= 0 && method < CVnCatcher::EMethodCount)
+        {
+        iCatcher->SetMethod(static_cast<CVnCatcher::TMethod>(method));
+        }
+    iIndicator->SetPlace(place);
+    iFepDesired = system;
+    iLogServer.Copy(server);
+
+    TBuf<200> line;
+    line.Format(KSettingsLoaded, flags, place, system, &iLogServer);
+    iLog->Write(line);
+    }
+
+void CVnKeyAppUi::SaveSettings()
+    {
+    if (!iLog || !iCatcher || !iIndicator)
+        {
+        return;
+        }
+    TFileName name(iLog->Folder());
+    name.Append(KSettingsFile);
+    RFile file;
+    if (file.Replace(iLog->Fs(), name, EFileWrite) != KErrNone)
+        {
+        return; // best effort: a setting that cannot be written is lost
+        }
+    const TInt flags = TVnShared::Encode(iCatcher->Vietnamese(), iCatcher->Options(),
+                                         iCatcher->LogKeys(), iCatcher->Method());
+    TBuf8<200> out;
+    out.AppendFormat(_L8("flags=%d\r\n"), flags);
+    out.AppendFormat(_L8("place=%d\r\n"), iIndicator->Place());
+    out.AppendFormat(_L8("system=%d\r\n"), iFepDesired ? 1 : 0);
+    TBuf8<64> server;
+    server.Copy(iLogServer.Left(server.MaxLength()));
+    out.AppendFormat(_L8("logserver=%S\r\n"), &server);
+    file.Write(out);
+    file.Close();
     }
 
 // The indicator and the title: "VnKey [V] m1", and "all" while Telex in all apps is on.
@@ -471,6 +597,7 @@ void CVnKeyAppUi::SendLogL()
         }
     server.TrimAll();
     iLogServer.Copy(server);
+    SaveSettings(); // remember the web stub's address
     HBufC8* content = iLog->ContentL(KMaxLogSent);
     CleanupStack::PushL(content);
     TBuf<100> line;

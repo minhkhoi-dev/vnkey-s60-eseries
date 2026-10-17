@@ -180,8 +180,18 @@ The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM imple
   phone restart of 2026-10-17.
 - The package puts everything on C:, so that with the memory card out the system's FEP
   and VnKey, which switches it back, are still there. While the plugin is the FEP, a new
-  VnKey is installed only after switching it off, and VnKey is never uninstalled (the
-  phone would have no FEP) until roadmap 4 does that by itself.
+  VnKey is installed only after switching it off, and VnKey is never uninstalled while it
+  is on in the same session (a new application would find no FEP). The FEP setting is kept
+  in RAM only on this phone (it is not stored, `error -6`), so a reboot always returns to
+  AknFep: that is both the safe off and the safe state before uninstalling. For this reason
+  VnKey does not run a risky live FEP swap at uninstall; it relies on the reboot. VnKey
+  saves its own settings in `settings.txt` next to the log (`flags` = the shared encoding
+  of the options, Vietnamese/English, the log key flag and the rewrite method; `place` the
+  indicator place; `system` the Telex-in-all-apps preference; `logserver` the web stub).
+  At start it loads them, publishes the shared state, and when `system` is on but the phone
+  came back as AknFep it reinstalls the plugin once (`HandleChangeInLoadedFep`), so Telex in
+  all apps survives a reboot as far as reopening VnKey. Same-boot it reads the live shared
+  state instead, and detects the plugin already being the FEP from `FepUid()`.
 
 ## Telex rules
 
@@ -286,4 +296,10 @@ check it; `readelf -S` on the objects in the image does). The signing keys
 3. The [V] / [E] mark in every application. Begun 2026-10-17 (0.1.6): shown in every
    application that has a status pane (non-fullscreen); the plugin's catcher owns it.
 4. Settings that last: the options, the shortcuts edited on the phone, the state at
-   start; uninstalling switches the FEP back first.
+   start; uninstalling switches the FEP back first. Begun 2026-10-17 (0.1.7,
+   `settings.txt`). On the E72 the options set before a reboot (modern tone) were there
+   after it, and VnKey's start put Telex in all apps back (`settings: restoring Telex in
+   all apps`; the plugin loaded with its catcher in OttPilot, menu2, EikSrvs and the rest,
+   no crash), and Telex typed in the applications after it (Khoi: every test passed). VnKey has to be opened once after each boot for that; nothing starts it at
+   boot yet. Uninstalling relies on the reboot (see "Design"). In the log, method 3 always
+   says `BAD`: the check runs before the simulated keys reach the editor; the text is right.
