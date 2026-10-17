@@ -62,6 +62,29 @@ normal, non-fullscreen application; not a server or a game), deleted with the ca
 app UI stack while the window group is still alive. The build's baked log server is the Mac's
 LAN address from `group/lan.sh` (192.168.1.16 on 2026-10-17).
 
+0.1.9 (2026-10-17, built, not yet run on the E72), three things Khoi asked for: VnKey opens
+on a settings list (`CVnSettingList`, a standard `CAknSettingItemList`) instead of the long
+Options menu, with the typing test behind Options > Typing test; VnKey starts at boot
+(`vnkeyboot.exe`, a startup list entry, as OttPilot's) and turns Telex in all apps back
+on; and the [V]/[E] mark hides while an application is full screen (Khoi: it showed over
+games and video; it is to be in the bar only). See "Design". On the E72 (0.1.9, log of
+15:47): the launcher started VnKey at boot (`started at boot, in the background`); the
+settings list worked (options, Telex in all apps on: plugin 0.1.9 in Phone, menu2, OttPilot
+and the rest, no crash; the mark places); `indicator: shown` in the applications. The
+restore at boot was not tried (Telex in all apps was off then), nor full-screen apps.
+Found: the 0.1.7 live off at 15:36 restarted the phone in the middle of a save and left
+`settings.txt` empty, which read as every option off. 0.1.10 saves through `settings.tmp`
+and `RFs::Replace`, keeps the defaults when `flags` is missing, and no longer saves again
+after a live off. Tests 1 to 4 of `docs/TESTING.md` passed on the E72 (0.1.9, log of
+16:13): at boot VnKey started, restored Telex in all apps 0.1 s later and removed the
+guard a minute after (`the phone kept going`), Telex typed in Messaging without opening
+VnKey; the mark hid in a Java game (`j9midps60: indicator: hidden, status pane hidden`,
+0.3 s after it showed); SkyForce Reloaded has no status pane, so it got no mark; no mark
+over the video player; with Start at boot off nothing started at boot. Test 5 (the
+update to 0.1.10) passed (log of 16:23): Off with No left the plugin on until the
+restart, the boot start then left it off, the installer closed VnKey and 0.1.10 started
+with the settings kept (`flags 319`), and Telex in all apps went on again.
+
 ## Requirements
 
 Decided by Khoi on 2026-10-16:
@@ -74,7 +97,11 @@ Decided by Khoi on 2026-10-16:
 - Ctrl+Space switches between Vietnamese and English; the trigger key is configurable and
   more than one may be set (`triggers.txt`), since Ctrl+Space is also the phone's own
   predictive-text toggle.
-- A [V] / [E] mark in the status bar, like the memory card, clock and WLAN icons.
+- A [V] / [E] mark in the status bar, like the memory card, clock and WLAN icons; only
+  in the bar: hidden while an application is full screen (a game, a video; Khoi,
+  2026-10-17).
+- VnKey's own screen is a settings screen, not a long menu of toggles, and VnKey starts by
+  itself at boot (Khoi, 2026-10-17).
 - Besides plain Telex: w alone types ư; a spell check that restores the keys of words
   that are not Vietnamese (class, email, window); typing shortcuts (gõ tắt, ko → không).
   VNI is not wanted.
@@ -121,7 +148,7 @@ above AknFep, so it sees every key first, and it never takes a letter away from 
 5. Ctrl+Space is the one key it consumes.
 
 Password editors are left alone. How a word is rewritten is the probe's question; there
-are three methods (menu "Rewrite method"): 1 selects the old text and replaces it with
+are three methods (setting "Rewrite method"): 1 selects the old text and replaces it with
 an inline edit committed at once; 2 deletes with backspaces through the FEP, then types
 the new text as an inline edit; 3 sends backspaces and the characters through the FEP
 (`CCoeFep::SimulateKeyEventsL`, protected, reached through `CVnFepAccess`).
@@ -144,7 +171,19 @@ for room around it), 2 pixels inside a thin frame of 11 x 13, in the skin's colo
 universal indicator icons (`KAknsIIDQsnIconColors`, `EAknsCIQsnIconColorsCG2`), on the
 bar's own background, drawn with the bottom bar's skin context
 (`CEikButtonGroupContainer::Current()->ButtonGroup()->AsControl()`); black where that
-cannot be had.
+cannot be had. Its window is `ECoeWinPriorityAlwaysAtFront`, so it would show over a
+full-screen game or video: since 0.1.9 it shows only while the bar is on the screen
+(`CVnIndicator::ShouldShow`). Avkon tells no other control when an application hides its
+status pane or softkeys, so the mark looks again 50 ms, 0.75 s and 1.45 s after every key
+up (the catcher), focus change (`MCoeFocusObserver`), return to the foreground
+(`MCoeForegroundObserver`) and layout switch. It hides when there is no status pane, the
+status pane is hidden, the pane of its place is not in the status pane's current layout,
+the application's `ClientRect()` reaches it (status pane or softkeys gone), the softkeys'
+bar under it is hidden, or the focused control's window lies over it and is in front of
+that bar's window (siblings compared with `FullOrdinalPosition`; a game that draws over a
+status pane it left visible). Each change is a log line (`indicator: shown`, `indicator:
+hidden, <why> | mark ... | client ... | focused ...`). Not handled: a full-screen window
+that is neither focused nor reflected in the status pane or `ClientRect()`.
 
 The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM implementation
 `0xE7A10003` of the FEP interface `0x1020233F`):
@@ -177,7 +216,10 @@ The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM imple
   is live only), so a reboot returns to AknFep and VnKey tracks the state itself
   (`iSystemFepOn`) rather than from `FepUid()`, which stays AknFep's in VnKey's own
   process. The live off swaps the FEP in every process at once and is the suspect for the
-  phone restart of 2026-10-17.
+  phone restart of 2026-10-17. Since 0.1.9 the setting's row shows the saved preference
+  (the title ends in `all` while the plugin is the FEP now); setting it to Off saves the
+  preference first, then asks whether to switch now as well (`r_vnkey_off_query`; No
+  leaves it on until the phone restarts, the safe off).
 - The package puts everything on C:, so that with the memory card out the system's FEP
   and VnKey, which switches it back, are still there. While the plugin is the FEP, a new
   VnKey is installed only after switching it off, and VnKey is never uninstalled while it
@@ -187,11 +229,36 @@ The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM imple
   VnKey does not run a risky live FEP swap at uninstall; it relies on the reboot. VnKey
   saves its own settings in `settings.txt` next to the log (`flags` = the shared encoding
   of the options, Vietnamese/English, the log key flag and the rewrite method; `place` the
-  indicator place; `system` the Telex-in-all-apps preference; `logserver` the web stub).
+  indicator place; `system` the Telex-in-all-apps preference; `boot` start at boot, 1 when
+  absent; `logserver` the web stub).
   At start it loads them, publishes the shared state, and when `system` is on but the phone
   came back as AknFep it reinstalls the plugin once (`HandleChangeInLoadedFep`), so Telex in
   all apps survives a reboot as far as reopening VnKey. Same-boot it reads the live shared
-  state instead, and detects the plugin already being the FEP from `FepUid()`.
+  state instead, and detects the plugin already being the FEP from `FepUid()`. The
+  automatic reinstall is skipped while the kill switch is there, and it is guarded: VnKey
+  writes `restoring.txt` next to the log before it and deletes it a minute after (or at
+  its exit); if the phone restarts with the file still there, the next start leaves Telex
+  in all apps off, sets `system` to 0 and says so in a note, so that a plugin that
+  restarted the phone cannot make it restart at every boot.
+- Start at boot (0.1.9): the package installs a startup list entry
+  (`data/vnkey_startup.rss` as `c:\private\101f875a\import\[E7A10001].rsc`) that names
+  the launcher `vnkeyboot.exe` (`src/VnKeyBoot.cpp`, UID `0xE7A10004`, no capabilities),
+  as OttPilot does (its `docs/DEVICE.md`: the E72 takes the entry from a self-signed
+  package and runs it about 70 s after boot). The launcher reads `settings.txt` in VnKey's
+  folder: with a line `boot=0` it does nothing; otherwise, unless VnKey runs already, it
+  starts VnKey through the application server with `EApaCommandBackground` (ten tries 3 s
+  apart). VnKey then sends itself behind the other applications
+  (`ProcessCommandParametersL`, log line `started at boot, in the background`), restores
+  Telex in all apps as at any start, and stays running. Telex in all apps does not need
+  VnKey running: after `VnKey exit` the plugin went on in every application (0.1.7 log,
+  `menu2` keys after the exit) and the shared state stays defined.
+- VnKey's own screens (0.1.9): `CVnSettingList` is the main screen, one row per option
+  (`TVnSettingId` in `VnKey.hrh`, rows and value texts in `vnkey.rss`); the selection key
+  toggles an on/off row or opens the page of a row with more values, Options > Change
+  opens any row's page. Non-ASCII letters in the resource are written as codes outside the
+  quotes (`"w alone types "<0x01b0>`; checked with rcomp: inside the quotes they stay
+  literal). Options > Typing test swaps in the editor of roadmap 1 (`CVnKeyAppView`;
+  softkeys Options/Back); only the screen in front is on the control stack.
 
 ## Telex rules
 
@@ -238,8 +305,8 @@ As in OttPilot (`symbian/CLAUDE.md` there):
   static data: tables are plain arrays of numbers or `char[N]`, never arrays of
   pointers. A `TVnMacros` (10 KB) never goes on the stack: applications that will load
   the plugin may have an 8 KB stack.
-- UID3s are in the development range: the app `0xE7A10001`; `0xE7A10002` and on are
-  kept for the plugin DLL and its implementation.
+- UID3s are in the development range: the app `0xE7A10001`; `0xE7A10002` the plugin DLL,
+  `0xE7A10003` its implementation, `0xE7A10004` the boot launcher.
 - The E72's own behaviour, measured by OttPilot, is in OttPilot's `docs/DEVICE.md`.
 
 ## Building
@@ -295,11 +362,17 @@ check it; `readelf -S` on the objects in the image does). The signing keys
    Done when: Messaging and OttPilot's chat take Telex. Begun 2026-10-17 (app 0.1.x).
 3. The [V] / [E] mark in every application. Begun 2026-10-17 (0.1.6): shown in every
    application that has a status pane (non-fullscreen); the plugin's catcher owns it.
+   On the E72 it showed over some full-screen applications (games, video); 0.1.9 hides it
+   while the bar is not on the screen (see "Design"); passed on the E72 (a Java game,
+   SkyForce Reloaded, the video player).
 4. Settings that last: the options, the shortcuts edited on the phone, the state at
    start; uninstalling switches the FEP back first. Begun 2026-10-17 (0.1.7,
    `settings.txt`). On the E72 the options set before a reboot (modern tone) were there
    after it, and VnKey's start put Telex in all apps back (`settings: restoring Telex in
    all apps`; the plugin loaded with its catcher in OttPilot, menu2, EikSrvs and the rest,
-   no crash), and Telex typed in the applications after it (Khoi: every test passed). VnKey has to be opened once after each boot for that; nothing starts it at
-   boot yet. Uninstalling relies on the reboot (see "Design"). In the log, method 3 always
+   no crash), and Telex typed in the applications after it (Khoi: every test passed). Up
+   to 0.1.8 VnKey had to be opened once after each boot for that; 0.1.9 starts it at boot
+   (setting "Start at boot", on by default) and has the settings list; both passed on the
+   E72 (2026-10-17). Uninstalling relies
+   on the reboot (see "Design"). In the log, method 3 always
    says `BAD`: the check runs before the simulated keys reach the editor; the text is right.

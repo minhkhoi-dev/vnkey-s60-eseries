@@ -1,19 +1,12 @@
-// VnKey.hrh - command ids, shared by the resource file and the code
+// VnKey.hrh - command and setting ids, shared by the resource file and the code
 #ifndef VNKEY_HRH
 #define VNKEY_HRH
 
 enum TVnKeyCommand
     {
-    EVnCmdToggle = 0x6000,  // Vietnamese on / off (also Ctrl+Space)
-    EVnCmdSystemFep,        // Telex in all apps: VnKey's plugin as the system's FEP, or AknFep
-    EVnCmdTone,             // traditional / modern tone placement
-    EVnCmdWAlone,           // w alone types ư
-    EVnCmdSpell,            // spell check
-    EVnCmdRestore,          // restore the keys of words that are not Vietnamese
-    EVnCmdMacros,           // typing shortcuts
-    EVnCmdMethod,           // how the word in the editor is replaced (probe)
-    EVnCmdIndicatorPlace,   // where the [V]/[E] indicator goes (probe)
-    EVnCmdLogKeys,          // a log line for every key event (probe)
+    EVnCmdChange = 0x6000,  // open the focused setting's page (the settings list)
+    EVnCmdTyping,           // the typing test: VnKey's own editor
+    EVnCmdSettings,         // back from the typing test to the settings list
     EVnCmdFepList,          // FEP check 1: the FEP plugins on the phone
     EVnCmdFepLoad,          // FEP check 2: load the phone's FEP plugin and free it
     EVnCmdFepCreate,        // FEP check 3: make a second FEP from it and delete it
@@ -21,6 +14,23 @@ enum TVnKeyCommand
     EVnCmdSendLog,          // send the log to the web stub on the Mac
     EVnCmdClearLog,         // empty the log
     EVnCmdReload            // re-read macros.txt and triggers.txt from the card
+    };
+
+// The rows of the settings list (CVnSettingList), in the order they are shown.
+enum TVnSettingId
+    {
+    EVnSetVietnamese = 1,   // Vietnamese on / off (also the trigger key, Ctrl+Space)
+    EVnSetAllApps,          // Telex in all apps: VnKey's plugin as the system's FEP
+    EVnSetBoot,             // start VnKey, hidden, when the phone starts
+    EVnSetTone,             // traditional / modern tone placement
+    EVnSetWAlone,           // w alone types u+horn
+    EVnSetSpell,            // spell check
+    EVnSetRestore,          // restore the keys of words that are not Vietnamese
+    EVnSetMacros,           // typing shortcuts
+    EVnSetMethod,           // how the word in the editor is replaced
+    EVnSetPlace,            // where the [V]/[E] mark goes
+    EVnSetLogKeys,          // a log line for every key event
+    EVnSetServer            // the web stub's address for Send log
     };
 
 #endif // VNKEY_HRH

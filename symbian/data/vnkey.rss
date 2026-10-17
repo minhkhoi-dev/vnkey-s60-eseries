@@ -1,4 +1,4 @@
-// vnkey.rss - the probe's resources
+// vnkey.rss - VnKey's resources: the settings list (the main screen), the menu, the queries
 NAME VNKY
 
 #include <eikon.rh>
@@ -22,33 +22,268 @@ RESOURCE MENU_BAR r_vnkey_menubar
     titles = { MENU_TITLE { menu_pane = r_vnkey_menu; } };
     }
 
-// The texts with a state in them are set at runtime (CVnKeyAppUi::DynInitMenuPaneL).
+// One menu for both screens: CVnKeyAppUi::DynInitMenuPaneL hides what the screen in front
+// does not have (Change and Typing test on the settings list; Clear text and Settings in
+// the typing test).
 RESOURCE MENU_PANE r_vnkey_menu
     {
     items =
         {
-        MENU_ITEM { command = EVnCmdToggle;         txt = "Vietnamese"; },
-        MENU_ITEM { command = EVnCmdSystemFep;      txt = "Telex in all apps"; },
-        MENU_ITEM { command = EVnCmdTone;           txt = "Tone"; },
-        MENU_ITEM { command = EVnCmdWAlone;         txt = "w alone"; },
-        MENU_ITEM { command = EVnCmdSpell;          txt = "Spell check"; },
-        MENU_ITEM { command = EVnCmdRestore;        txt = "Restore English"; },
-        MENU_ITEM { command = EVnCmdMacros;         txt = "Shortcuts"; },
-        MENU_ITEM { command = EVnCmdMethod;         txt = "Rewrite method"; },
-        MENU_ITEM { command = EVnCmdIndicatorPlace; txt = "Indicator place"; },
-        MENU_ITEM { command = EVnCmdLogKeys;        txt = "Log every key"; },
-        MENU_ITEM { command = EVnCmdFepList;        txt = "FEP check 1: list"; },
-        MENU_ITEM { command = EVnCmdFepLoad;        txt = "FEP check 2: load plugin"; },
-        MENU_ITEM { command = EVnCmdFepCreate;      txt = "FEP check 3: second FEP"; },
-        MENU_ITEM { command = EVnCmdClear;          txt = "Clear text"; },
-        MENU_ITEM { command = EVnCmdReload;         txt = "Reload macros/triggers"; },
-        MENU_ITEM { command = EVnCmdSendLog;        txt = "Send log"; },
-        MENU_ITEM { command = EVnCmdClearLog;       txt = "Clear log"; },
-        MENU_ITEM { command = EAknSoftkeyExit;      txt = "Exit"; }
+        MENU_ITEM { command = EVnCmdChange;     txt = "Change"; },
+        MENU_ITEM { command = EVnCmdTyping;     txt = "Typing test"; },
+        MENU_ITEM { command = EVnCmdClear;      txt = "Clear text"; },
+        MENU_ITEM { command = EVnCmdSettings;   txt = "Settings"; },
+        MENU_ITEM { command = EVnCmdReload;     txt = "Reload macros/triggers"; },
+        MENU_ITEM { command = EVnCmdSendLog;    txt = "Send log"; },
+        MENU_ITEM { command = EVnCmdClearLog;   txt = "Clear log"; },
+        MENU_ITEM { cascade = r_vnkey_fep_menu; txt = "FEP checks"; },
+        MENU_ITEM { command = EAknSoftkeyExit;  txt = "Exit"; }
         };
     }
 
-// Options > Telex in all apps, to off: warns that it may restart the phone.
+RESOURCE MENU_PANE r_vnkey_fep_menu
+    {
+    items =
+        {
+        MENU_ITEM { command = EVnCmdFepList;   txt = "1: list"; },
+        MENU_ITEM { command = EVnCmdFepLoad;   txt = "2: load plugin"; },
+        MENU_ITEM { command = EVnCmdFepCreate; txt = "3: second FEP"; }
+        };
+    }
+
+// The settings list (CVnSettingList), the rows in the order of TVnSettingId. A letter
+// outside ASCII is written as its code outside the quotes ("w"<0x01b0> is w and u+horn):
+// the resource compiler's character set is not to be trusted with them in the text.
+RESOURCE AVKON_SETTING_ITEM_LIST r_vnkey_setting_list
+    {
+    title = "VnKey";
+    items =
+        {
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetVietnamese;
+            name = "Vietnamese typing";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetAllApps;
+            name = "Telex in all apps";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetBoot;
+            name = "Start at boot";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetTone;
+            name = "Tone placement";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_tone_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetWAlone;
+            name = "w alone types "<0x01b0>;
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetSpell;
+            name = "Spell check";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetRestore;
+            name = "Restore English words";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetMacros;
+            name = "Shortcuts (g"<0x00f5>" t"<0x1eaf>"t)";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetMethod;
+            name = "Rewrite method";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_method_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetPlace;
+            name = "[V]/[E] mark place";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_place_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetLogKeys;
+            name = "Log every key";
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_onoff_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
+            identifier = EVnSetServer;
+            name = "Log server";
+            setting_page_resource = r_vnkey_text_page;
+            empty_item_text = "none";
+            }
+        };
+    }
+
+// The page of a row with a few values (the row's name is its title).
+RESOURCE AVKON_SETTING_PAGE r_vnkey_popup_page
+    {
+    label = "";
+    type = EAknCtPopupSettingList;
+    editor_resource_id = r_vnkey_popup_list;
+    }
+
+RESOURCE POPUP_SETTING_LIST r_vnkey_popup_list
+    {
+    flags = 0;
+    }
+
+// The log server's page: an address:port, no predictive text.
+RESOURCE AVKON_SETTING_PAGE r_vnkey_text_page
+    {
+    label = "";
+    type = EEikCtEdwin;
+    editor_resource_id = r_vnkey_server_edwin;
+    }
+
+RESOURCE EDWIN r_vnkey_server_edwin
+    {
+    flags = EEikEdwinNoLineOrParaBreaks;
+    width = 16;
+    lines = 1;
+    maxlength = 60;
+    default_case = EAknEditorLowerCase;
+    avkon_flags = EAknEditorFlagNoT9 | EAknEditorFlagLatinInputModesOnly;
+    }
+
+// On / Off (CAknBinaryPopupSettingItem: the values 1 and 0).
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_vnkey_onoff_texts
+    {
+    setting_texts_resource = r_vnkey_onoff_values;
+    popped_up_texts_resource = r_vnkey_onoff_popped;
+    }
+
+RESOURCE ARRAY r_vnkey_onoff_values
+    {
+    items =
+        {
+        AVKON_ENUMERATED_TEXT { value = 1; text = "On"; },
+        AVKON_ENUMERATED_TEXT { value = 0; text = "Off"; }
+        };
+    }
+
+RESOURCE ARRAY r_vnkey_onoff_popped
+    {
+    items =
+        {
+        LBUF { txt = "On"; },
+        LBUF { txt = "Off"; }
+        };
+    }
+
+// Tone placement: modern hoà thuý (1), traditional hòa thúy (0).
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_vnkey_tone_texts
+    {
+    setting_texts_resource = r_vnkey_tone_values;
+    popped_up_texts_resource = r_vnkey_tone_popped;
+    }
+
+RESOURCE ARRAY r_vnkey_tone_values
+    {
+    items =
+        {
+        AVKON_ENUMERATED_TEXT { value = 1; text = "Modern: ho"<0x00e0>", thu"<0x00fd>; },
+        AVKON_ENUMERATED_TEXT { value = 0; text = "Traditional: h"<0x00f2>"a, th"<0x00fa>"y"; }
+        };
+    }
+
+RESOURCE ARRAY r_vnkey_tone_popped
+    {
+    items =
+        {
+        LBUF { txt = "Modern: ho"<0x00e0>", thu"<0x00fd>; },
+        LBUF { txt = "Traditional: h"<0x00f2>"a, th"<0x00fa>"y"; }
+        };
+    }
+
+// Rewrite method (CVnCatcher::TMethod, 0..2).
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_vnkey_method_texts
+    {
+    setting_texts_resource = r_vnkey_method_values;
+    popped_up_texts_resource = r_vnkey_method_popped;
+    }
+
+RESOURCE ARRAY r_vnkey_method_values
+    {
+    items =
+        {
+        AVKON_ENUMERATED_TEXT { value = 0; text = "1: inline"; },
+        AVKON_ENUMERATED_TEXT { value = 1; text = "2: delete, inline"; },
+        AVKON_ENUMERATED_TEXT { value = 2; text = "3: keys (default)"; }
+        };
+    }
+
+RESOURCE ARRAY r_vnkey_method_popped
+    {
+    items =
+        {
+        LBUF { txt = "1: inline"; },
+        LBUF { txt = "2: delete, inline"; },
+        LBUF { txt = "3: keys (default)"; }
+        };
+    }
+
+// Where the [V]/[E] mark goes (CVnIndicator::Place(), 0..3).
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_vnkey_place_texts
+    {
+    setting_texts_resource = r_vnkey_place_values;
+    popped_up_texts_resource = r_vnkey_place_popped;
+    }
+
+RESOURCE ARRAY r_vnkey_place_values
+    {
+    items =
+        {
+        AVKON_ENUMERATED_TEXT { value = 0; text = "1: bottom bar icons"; },
+        AVKON_ENUMERATED_TEXT { value = 1; text = "2: left of battery"; },
+        AVKON_ENUMERATED_TEXT { value = 2; text = "3: navi pane"; },
+        AVKON_ENUMERATED_TEXT { value = 3; text = "4: title pane"; }
+        };
+    }
+
+RESOURCE ARRAY r_vnkey_place_popped
+    {
+    items =
+        {
+        LBUF { txt = "1: bottom bar icons"; },
+        LBUF { txt = "2: left of battery"; },
+        LBUF { txt = "3: navi pane"; },
+        LBUF { txt = "4: title pane"; }
+        };
+    }
+
+// Telex in all apps, to off: off now (may restart the phone) or at the next restart.
 RESOURCE DIALOG r_vnkey_off_query
     {
     flags = EGeneralQueryFlags;

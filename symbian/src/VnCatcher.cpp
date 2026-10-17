@@ -77,12 +77,13 @@ void CVnCatcher::ConstructL()
     appUi->AddToStackL(this, KStackPriority, flags);
     iStacked = ETrue;
     // The [V]/[E] mark in every application the plugin runs in, but only where there is a
-    // status pane to sit in (a normal, non-fullscreen application; not a server or a game).
-    // Its window belongs to this application; the app UI's control stack deletes the catcher
-    // while the window group is still alive, so the indicator window is freed safely.
+    // status pane to sit in (not a server); it hides itself while the application is full
+    // screen (CVnIndicator::Check). Its window belongs to this application; the app UI's
+    // control stack deletes the catcher while the window group is still alive, so the
+    // indicator window is freed safely.
     if (iInPlugin && CEikStatusPaneBase::Current())
         {
-        TRAP_IGNORE(iIndicator = CVnIndicator::NewL());
+        TRAP_IGNORE(iIndicator = CVnIndicator::NewL(this));
         if (iIndicator)
             {
             iIndicator->SetVietnamese(iVietnamese);
@@ -188,6 +189,10 @@ TBool CVnCatcher::IsSimulating() const
 
 TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode aType)
     {
+    if (iIndicator && aType == EEventKeyUp)
+        {
+        iIndicator->CheckSoon(); // the key may have made the application full screen
+        }
     if (IsSimulating() || !SyncShared())
         {
         return EKeyWasNotConsumed;
@@ -573,4 +578,9 @@ void CVnCatcher::Log(TRefByValue<const TDesC> aFmt, ...)
     line.AppendFormatList(aFmt, list, &overflow);
     VA_END(list);
     iObserver.CatcherLog(line);
+    }
+
+void CVnCatcher::IndicatorLog(const TDesC& aLine)
+    {
+    iObserver.CatcherLog(aLine);
     }

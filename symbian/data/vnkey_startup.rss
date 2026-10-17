@@ -1,0 +1,13 @@
+// vnkey_startup.rss - tells the phone to run vnkeyboot.exe at boot (roadmap 4), which
+// starts VnKey in the background unless settings.txt says boot=0. The package installs it
+// as [E7A10001].rsc in the import folder of the Startup List Management server (private
+// directory 101f875a on C:), as OttPilot's ottpilot_startup.rss, which the E72 takes from a
+// self-signed package. The backslashes are doubled, as in every string of a resource file.
+
+#include <startupitem.rh>
+
+RESOURCE STARTUP_ITEM_INFO vnkey_startup
+    {
+    executable_name = "!:\\sys\\bin\\vnkeyboot.exe";
+    recovery = EStartupItemExPolicyNone;
+    }

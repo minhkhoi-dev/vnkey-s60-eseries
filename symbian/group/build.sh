@@ -47,9 +47,10 @@ EOV
 bldmake bldfiles
 abld build gcce urel
 # abld reports success even when a file does not compile
-for bin in vnkey.exe vnkeyfep.dll; do
+for bin in vnkey.exe vnkeyfep.dll vnkeyboot.exe; do
     path="${EPOCROOT}epoc32/release/gcce/urel/$bin"
-    if [ ! -f "$path" ] || [ "$path" -ot ../src/VnCatcher.cpp ] || [ "$path" -ot ../src/VnShared.cpp ]; then
+    if [ ! -f "$path" ] || [ "$path" -ot ../src/VnCatcher.cpp ] || [ "$path" -ot ../src/VnShared.cpp ] \
+       || [ "$path" -ot ../src/VnKeyBoot.cpp ]; then
         echo "build.sh: $path was not built, see the errors above" >&2
         exit 1
     fi

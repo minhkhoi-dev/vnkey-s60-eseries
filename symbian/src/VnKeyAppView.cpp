@@ -38,8 +38,7 @@ void CVnKeyAppView::ConstructL(const TRect& aRect)
     iEditor->SetCharFormatLayer(layer); // the editor owns it
     SetRect(aRect);
     iEditor->SetBackgroundColorL(KRgbWhite); // after sizing
-    iEditor->SetFocus(ETrue);
-    ActivateL();
+    ActivateL(); // the editor takes the focus with the view (FocusChanged)
     }
 
 CVnKeyAppView::~CVnKeyAppView()
@@ -73,6 +72,11 @@ void CVnKeyAppView::SizeChanged()
     TRect rect(Rect());
     rect.Shrink(KMargin, KMargin);
     iEditor->SetRect(rect);
+    }
+
+void CVnKeyAppView::FocusChanged(TDrawNow aDrawNow)
+    {
+    iEditor->SetFocus(IsFocused(), aDrawNow);
     }
 
 void CVnKeyAppView::Draw(const TRect& /*aRect*/) const

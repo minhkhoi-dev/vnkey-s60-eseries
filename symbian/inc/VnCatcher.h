@@ -6,9 +6,9 @@
 #include <fepitfr.h>
 #include "VnTelex.h"
 #include "VnShared.h"
+#include "VnIndicator.h"
 
 class MCoeFepAwareTextEditor;
-class CVnIndicator;
 
 // What the catcher tells its owner.
 class MVnCatcherObserver
@@ -34,7 +34,7 @@ public:
 // key log. In VnKey's own app it works without it; in the plugin it does nothing while
 // the state is not there (VnKey has not run since the phone started).
 class CVnCatcher : public CCoeControl, public MFepInlineTextFormatRetriever,
-                   public MFepPointerEventHandlerDuringInlineEdit
+                   public MFepPointerEventHandlerDuringInlineEdit, public MVnIndicatorObserver
     {
 public:
     // How a word is rewritten in the editor (the probe tries each, docs/TESTING.md).
@@ -95,6 +95,8 @@ private:
     // From MFepPointerEventHandlerDuringInlineEdit
     void HandlePointerEventInInlineTextL(TPointerEvent::TType aType, TUint aModifiers,
                                          TInt aPositionInInlineText);
+    // From MVnIndicatorObserver
+    void IndicatorLog(const TDesC& aLine);
 
 private:
     // A letter AknFep is about to type, and what the editor looked like before it: taken

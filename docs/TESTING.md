@@ -11,18 +11,107 @@ it lands in `logs/` of this repository (git-ignored) as `vnkey-<date>-<time>.log
 tell Claude which steps were done and what was seen on the screen. Options > Clear log
 empties it on the phone after it was sent.
 
+## Tests for app 0.1.9 / 0.1.10
+
+VnKey opens on a settings list. The selection key toggles an On/Off row or opens a list
+to pick from. The old editor is under Options > Typing test.
+
+### Test 1: Telex comes back after a restart
+
+Pre-condition:
+- VnKey 0.1.9 or later installed.
+- VnKey settings: Vietnamese typing On, Telex in all apps On, Start at boot On.
+
+Steps:
+1. Restart the phone.
+2. Do not open VnKey. Wait 2 minutes after the idle screen appears.
+3. Messaging > New message > Text message.
+4. Type `Vieejt` and a space.
+
+Expected:
+- The text becomes `Việt `.
+- The [V] mark is in the bottom bar.
+
+### Test 2: No mark in full-screen apps
+
+Pre-condition:
+- Test 1 passed.
+
+Steps:
+1. Open SkyForce Reloaded and play a few seconds.
+2. Open a Java game.
+3. Gallery: play a video full screen.
+4. Open Messaging.
+
+Expected:
+- Steps 1 to 3: no [V]/[E] mark on the screen.
+- Step 4: the mark is in the bottom bar.
+
+### Test 3: Start at boot off
+
+Pre-condition:
+- Test 1 passed.
+
+Steps:
+1. VnKey > Start at boot: Off. Options > Exit.
+2. Restart the phone. Wait 2 minutes.
+3. Hold the menu key (open applications).
+4. Messaging > New message: type `Vieejt` and a space.
+5. VnKey > Start at boot: On.
+
+Expected:
+- Step 3: VnKey is not in the list.
+- Step 4: the text stays `Vieejt` (Telex is off).
+
+### Test 4: Send the log
+
+Pre-condition:
+- `bash symbian/group/publish.sh` running on the Mac.
+
+Steps:
+1. VnKey > Options > Send log > OK.
+
+Expected:
+- A note `Log sent`.
+
+### Test 5: Update to a new version
+
+Pre-condition:
+- Tests 1 to 4 done.
+
+Steps:
+1. VnKey > Telex in all apps: Off. Answer No.
+2. Restart the phone.
+3. Browser: open `http://192.168.1.16:8060/` > Install the newest version. If the
+   installer asks to close VnKey, answer Yes.
+4. Open VnKey. Telex in all apps: On.
+
+Expected:
+- Step 1: a note `Telex in all apps stays on until the phone restarts.`
+- Step 3: the install finishes with no error.
+- Step 4: the other settings are as before; the title ends in `all`.
+
+Rules while Telex in all apps is on: never install or uninstall VnKey before steps 1
+and 2 of test 5. If the phone ever restarts while VnKey turns Telex back on at boot, VnKey
+leaves it off and shows a note; turn it on again by hand.
+
 ## Telex in all apps (roadmap 2, app 0.1.x)
 
 The package puts VnKey and its plugin (`vnkeyfep.dll`) on the phone's memory, C:,
 whatever the installer would choose. Rules while the plugin is the phone's FEP:
 
-- Before installing a new VnKey: VnKey > Options > Telex in all apps, to off. With it on,
-  every application has the plugin loaded and the installer may refuse to replace it.
-- Never uninstall VnKey while it is on: the phone would be left with no FEP at all.
+- Before installing a new VnKey, the plugin must be off: with it on, every application
+  has the plugin loaded and the installer may refuse to replace it. Since 0.1.9, VnKey
+  starts at boot and turns it back on, so: Telex in all apps: Off, answer No ("off at the
+  next restart"), restart the phone, then install. Turn it on again afterwards.
+- Never uninstall VnKey while it is on: the phone would be left with no FEP at all. Turn
+  it off the same way first (Off, No, restart).
 - The safe way to turn it off is to restart the phone: the setting does not survive a
-  reboot, so the phone comes back with its own input (AknFep). The menu's off restarts the
-  phone on the E72 (a process crashes mid-switch), so it now asks first and should be used
-  only if a reboot is not handy; prefer the reboot.
+  reboot, so the phone comes back with its own input (AknFep). Setting the row to Off
+  saves that first; answering Yes also switches it off at once, which restarts the
+  phone on the E72 (a process crashes mid-switch); prefer No and a restart.
+- If the phone ever restarts while VnKey turns Telex back on by itself (at boot), the
+  next start leaves it off and says so; turn it on again by hand to retry.
 - With it on, the [V]/[E] mark shows in every application that has a status bar
   (non-fullscreen); it tracks Vietnamese/English there too.
 - Kill switch, should applications misbehave and VnKey not open: in File manager, on the
@@ -32,23 +121,22 @@ whatever the installer would choose. Rules while the plugin is the phone's FEP:
 
 Steps:
 
-1. Install 0.1.x as before. Open VnKey: the title is `VnKey [V] m1`, the menu has
-   Telex in all apps (off).
-2. VnKey > Options > Telex in all apps. A note says it is on and the title ends in
+1. Install 0.1.x as before. Open VnKey: the title is `VnKey [V] m3`, the settings have
+   Telex in all apps (Off).
+2. VnKey > Telex in all apps: On. A note says it is on and the title ends in
    `all`. Note anything else that happens (an application closing, the phone restarting).
    If the phone misbehaves, restart it: that turns the plugin off.
 3. Without closing VnKey, open Messaging > New message > Text message: type the table of
    the probe's step 2 below, each line then a space. Ctrl+Space there, a word, Ctrl+Space
    again. A long press and Fn + a letter after a word, as in step 5 below.
 4. OttPilot: type the same in a chat.
-5. Back in VnKey: Options > Send log. Then either Options > Telex in all apps to off, or
-   restart the phone, unless Telex is to stay on.
+5. Back in VnKey: Options > Send log.
 
 Trigger key: VnKey writes `triggers.txt` next to `macros.txt` the first time, with
 `ctrl+space`. To change or add a trigger (Ctrl+Space is also the phone's own predictive
 toggle), edit `triggers.txt` on the phone — one key per line, modifiers and a key joined by
 `+` (`ctrl` `shift` `fn` `alt`; keys `space` `enter` `tab` `bksp` or a scan code like
-`0x5f`). Turn on Options > Log every key to read a key's scan code from the log. Then
+`0x5f`). Turn on the setting Log every key to read a key's scan code from the log. Then
 Options > Reload macros/triggers (in VnKey; other apps pick it up when they next load the
 plugin, e.g. after a reboot and turning Telex on again).
 
@@ -57,6 +145,9 @@ The log has the plugin's lines with the application's program name in front
 `rewrite` lines as in the probe); VnKey's own lines have no name. Keys typed into password fields are never logged.
 
 ## The probe (roadmap 1, app 0.0.x)
+
+Since 0.1.9 the probe's editor is VnKey > Options > Typing test, and the options below
+(Rewrite method, Indicator place, Tone, ...) are rows of the settings list, not menu items.
 
 Before the first run:
 

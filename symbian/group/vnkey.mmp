@@ -1,5 +1,6 @@
-// vnkey.mmp - VnKey for S60 3rd Edition FP2 (Nokia E72): the app, with Telex in its own
-// editor and the switch for the plugin in every application (vnkeyfep.mmp)
+// vnkey.mmp - VnKey for S60 3rd Edition FP2 (Nokia E72): the app, its settings, the typing
+// test with Telex in its own editor, and the switch for the plugin in every application
+// (vnkeyfep.mmp). vnkeyboot.mmp is the launcher the phone starts at boot.
 
 TARGET          vnkey.exe
 TARGETTYPE      exe
@@ -17,6 +18,7 @@ SOURCE          VnKeyApplication.cpp
 SOURCE          VnKeyDocument.cpp
 SOURCE          VnKeyAppUi.cpp
 SOURCE          VnKeyAppView.cpp
+SOURCE          VnSettingList.cpp
 SOURCE          VnCatcher.cpp
 SOURCE          VnIndicator.cpp
 SOURCE          VnFepProbe.cpp
@@ -35,6 +37,12 @@ START RESOURCE  vnkey_reg.rss
 TARGETPATH      /private/10003a3f/apps
 END
 
+// The startup list entry (roadmap 4): the package installs it as
+// c:\private\101f875a\import\[E7A10001].rsc, and the phone then runs vnkeyboot.exe at boot.
+START RESOURCE  vnkey_startup.rss
+TARGETPATH      /private/101f875a/import
+END
+
 USERINCLUDE     ../inc
 SYSTEMINCLUDE   /epoc32/include
 
@@ -42,3 +50,4 @@ LIBRARY         euser.lib apparc.lib cone.lib eikcore.lib eikcoctl.lib
 LIBRARY         avkon.lib bafl.lib gdi.lib efsrv.lib charconv.lib
 LIBRARY         fepbase.lib etext.lib form.lib ecom.lib ws32.lib
 LIBRARY         esock.lib insock.lib commdb.lib aknskins.lib centralrepository.lib
+LIBRARY         apgrfx.lib

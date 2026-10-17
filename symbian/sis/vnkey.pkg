@@ -20,3 +20,9 @@
 ; The FEP plugin (roadmap 2)
 "$(EPOCROOT)epoc32/release/gcce/urel/vnkeyfep.dll"-"c:\sys\bin\vnkeyfep.dll"
 "$(EPOCROOT)epoc32/data/z/resource/plugins/vnkeyfep.rsc"-"c:\resource\plugins\vnkeyfep.rsc"
+
+; Start at boot (roadmap 4): the phone runs the launcher at boot, which starts VnKey in the
+; background unless settings.txt says boot=0. The brackets are part of the file name:
+; [package UID].rsc in the Startup List Management server's import folder.
+"$(EPOCROOT)epoc32/release/gcce/urel/vnkeyboot.exe"-"c:\sys\bin\vnkeyboot.exe"
+"$(EPOCROOT)epoc32/data/z/private/101f875a/import/vnkey_startup.rsc"-"c:\private\101f875a\import\[E7A10001].rsc"

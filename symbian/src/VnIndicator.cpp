@@ -2,8 +2,11 @@
 #include <aknsconstants.h>
 #include <aknsdrawutils.h>
 #include <aknsutils.h>
+#include <avkon.hrh>
+#include <eikappui.h>
 #include <eikbtgpc.h>
 #include <eikenv.h>
+#include <eikspane.h>
 #include <gdi.h>
 #include "VnIndicator.h"
 
@@ -18,6 +21,25 @@ _LIT(KNameTitle, "title");
 _LIT(KNameContext, "context");
 _LIT(KBarFmt, " | bar %d,%d-%d,%d");
 _LIT(KNoBar, " | no bar");
+_LIT(KStateFmt, " | %S");
+_LIT(KNotChecked, "not checked yet");
+_LIT(KShowFmt, "indicator: %S");
+_LIT(KHiddenFmt, " | mark %d,%d-%d,%d | client %d,%d-%d,%d | focused %d,%d-%d,%d");
+
+// Why the mark is shown or hidden (Check), for the log.
+_LIT(KWhyShown, "shown");
+_LIT(KWhyNoPane, "hidden, no status pane");
+_LIT(KWhyPaneHidden, "hidden, status pane hidden");
+_LIT(KWhyNotInLayout, "hidden, its pane is not in the layout");
+_LIT(KWhyClientArea, "hidden, the app's area reaches it");
+_LIT(KWhyNoBar, "hidden, softkeys hidden");
+_LIT(KWhyCovered, "hidden, the focused window is in front of the bar");
+
+// The checks after a key, a focus change or the foreground: 50 ms after it, then 0.75 s
+// and 1.45 s after it, for applications that hide the bar a moment later.
+const TInt KFirstCheck = 50000;
+const TInt KCheckInterval = 700000;
+const TInt KChecks = 3;
 
 // The letters, drawn pixel by pixel as the phone's bitmap icons are: 5 x 7 pixels, a byte
 // per row from the top, bit 4 the left column.
@@ -39,17 +61,17 @@ static CCoeControl* BottomBar()
     return cba && cba->ButtonGroup() ? cba->ButtonGroup()->AsControl() : NULL;
     }
 
-CVnIndicator* CVnIndicator::NewL()
+CVnIndicator* CVnIndicator::NewL(MVnIndicatorObserver* aObserver)
     {
-    CVnIndicator* self = new (ELeave) CVnIndicator;
+    CVnIndicator* self = new (ELeave) CVnIndicator(aObserver);
     CleanupStack::PushL(self);
     self->ConstructL();
     CleanupStack::Pop(self);
     return self;
     }
 
-CVnIndicator::CVnIndicator()
-    : iVietnamese(ETrue)
+CVnIndicator::CVnIndicator(MVnIndicatorObserver* aObserver)
+    : iObserver(aObserver), iVietnamese(ETrue)
     {
     }
 
@@ -59,11 +81,31 @@ void CVnIndicator::ConstructL()
     Window().SetOrdinalPosition(0, ECoeWinPriorityAlwaysAtFront);
     Window().SetNonFading(ETrue); // a menu in front must not dim it
     Layout();
+    iTimer = CPeriodic::NewL(CActive::EPriorityLow);
+    iCoeEnv->AddFocusObserverL(*this);
+    iFocusObserving = ETrue;
+    iCoeEnv->AddForegroundObserverL(*this);
+    iForegroundObserving = ETrue;
+    MakeVisible(EFalse); // until the first check has seen the bar on the screen
     ActivateL();
+    CheckSoon();
     }
 
 CVnIndicator::~CVnIndicator()
     {
+    if (iTimer)
+        {
+        iTimer->Cancel();
+        }
+    delete iTimer;
+    if (iFocusObserving)
+        {
+        iCoeEnv->RemoveFocusObserver(*this);
+        }
+    if (iForegroundObserving)
+        {
+        iCoeEnv->RemoveForegroundObserver(*this);
+        }
     }
 
 void CVnIndicator::SetVietnamese(TBool aOn)
@@ -74,9 +116,169 @@ void CVnIndicator::SetVietnamese(TBool aOn)
 
 void CVnIndicator::SetPlace(TInt aPlace)
     {
-    iPlace = aPlace % KPlaces;
+    iPlace = ((aPlace % KPlaces) + KPlaces) % KPlaces; // a bad settings.txt gives no bad place
     Layout();
     DrawNow();
+    CheckSoon();
+    }
+
+void CVnIndicator::CheckSoon()
+    {
+    if (!iTimer)
+        {
+        return;
+        }
+    iTimer->Cancel();
+    iTicks = KChecks;
+    iTimer->Start(KFirstCheck, KCheckInterval, TCallBack(Tick, this));
+    }
+
+TInt CVnIndicator::Tick(TAny* aSelf)
+    {
+    CVnIndicator* self = static_cast<CVnIndicator*>(aSelf);
+    self->Check();
+    if (--self->iTicks <= 0)
+        {
+        self->iTimer->Cancel(); // CPeriodic queues the next tick before the call
+        }
+    return 0;
+    }
+
+// Shows or hides the mark as ShouldShow says; a line in the log when that changes.
+void CVnIndicator::Check()
+    {
+    TPtrC why;
+    const TBool show = ShouldShow(why);
+    iWhy.Set(why);
+    if (show == iShown)
+        {
+        return;
+        }
+    iShown = show;
+    if (show)
+        {
+        Layout();
+        MakeVisible(ETrue);
+        DrawDeferred();
+        }
+    else
+        {
+        MakeVisible(EFalse);
+        }
+    if (iObserver)
+        {
+        TBuf<200> line;
+        line.Format(KShowFmt, &why);
+        if (!show)
+            {
+            // what the decision saw, should the mark hide where the bar is on the screen
+            const TRect mine(Position(), Size());
+            CEikAppUi* appUi = static_cast<CEikAppUi*>(iCoeEnv->AppUi());
+            const TRect client(appUi ? appUi->ClientRect() : TRect());
+            TRect focused;
+            CCoeControl* control = appUi ? appUi->TopFocusedControl() : NULL;
+            RDrawableWindow* win = control ? control->DrawableWindow() : NULL;
+            if (win)
+                {
+                focused = TRect(win->AbsPosition(), win->Size());
+                }
+            line.AppendFormat(KHiddenFmt, mine.iTl.iX, mine.iTl.iY, mine.iBr.iX, mine.iBr.iY,
+                              client.iTl.iX, client.iTl.iY, client.iBr.iX, client.iBr.iY,
+                              focused.iTl.iX, focused.iTl.iY, focused.iBr.iX, focused.iBr.iY);
+            }
+        iObserver->IndicatorLog(line);
+        }
+    }
+
+// Whether the bar the mark sits in is on the screen now, and why not (CLAUDE.md "Design").
+TBool CVnIndicator::ShouldShow(TPtrC& aWhy) const
+    {
+    CEikStatusPaneBase* sp = CEikStatusPaneBase::Current();
+    if (!sp)
+        {
+        aWhy.Set(KWhyNoPane);
+        return EFalse;
+        }
+    if (!sp->IsVisible())
+        {
+        aWhy.Set(KWhyPaneHidden);
+        return EFalse;
+        }
+    TInt pane = EEikStatusPaneUidTitle;
+    switch (iPlace)
+        {
+        case 0: pane = EEikStatusPaneUidIndic; break;
+        case 1: pane = EEikStatusPaneUidBattery; break;
+        case 2: pane = EEikStatusPaneUidNavi; break;
+        default: break;
+        }
+    if (!sp->PaneCapabilities(TUid::Uid(pane)).IsInCurrentLayout())
+        {
+        aWhy.Set(KWhyNotInLayout);
+        return EFalse;
+        }
+    const TRect mine(Position(), Size());
+    CEikAppUi* appUi = static_cast<CEikAppUi*>(iCoeEnv->AppUi());
+    if (appUi && appUi->ClientRect().Intersects(mine))
+        {
+        aWhy.Set(KWhyClientArea); // the status pane or the softkeys are not there
+        return EFalse;
+        }
+    CCoeControl* bar = BottomBar();
+    if (bar && TRect(bar->PositionRelativeToScreen(), bar->Size()).Intersects(mine))
+        {
+        CEikButtonGroupContainer* cba = CEikButtonGroupContainer::Current();
+        if (!bar->IsVisible() || (cba && !cba->IsVisible()))
+            {
+            aWhy.Set(KWhyNoBar);
+            return EFalse;
+            }
+        }
+    if (appUi && CoveredByFocused(mine))
+        {
+        aWhy.Set(KWhyCovered); // a game or a video that draws over a status pane it left on
+        return EFalse;
+        }
+    aWhy.Set(KWhyShown);
+    return ETrue;
+    }
+
+// ETrue when the focused control's window lies over the mark's spot and is in front of the
+// window of the bar there (the softkeys' bar, or else the title pane's). When the two are
+// not siblings in the window tree their order cannot be told, and the answer is EFalse.
+TBool CVnIndicator::CoveredByFocused(const TRect& aMine) const
+    {
+    CCoeControl* focused = static_cast<CEikAppUi*>(iCoeEnv->AppUi())->TopFocusedControl();
+    if (!focused || focused == this)
+        {
+        return EFalse;
+        }
+    RDrawableWindow* win = focused->DrawableWindow();
+    if (!win || !TRect(win->AbsPosition(), win->Size()).Intersects(aMine))
+        {
+        return EFalse;
+        }
+    RDrawableWindow* barWin = NULL;
+    CCoeControl* bar = BottomBar();
+    if (bar && TRect(bar->PositionRelativeToScreen(), bar->Size()).Intersects(aMine))
+        {
+        barWin = bar->DrawableWindow();
+        }
+    else
+        {
+        CEikStatusPaneBase* sp = CEikStatusPaneBase::Current();
+        CCoeControl* title = NULL;
+        if (sp)
+            {
+            TRAP_IGNORE(title = sp->ContainerControlL(TUid::Uid(EEikStatusPaneUidTitle)));
+            }
+        barWin = title ? title->DrawableWindow() : NULL;
+        }
+    if (!barWin || barWin == win || barWin->Parent() != win->Parent())
+        {
+        return EFalse;
+        }
+    return win->FullOrdinalPosition() < barWin->FullOrdinalPosition(); // 0 is the front
     }
 
 // A box of KBoxWidth x KBoxHeight pixels (twice that and more on a bigger screen), in the
@@ -204,6 +406,30 @@ void CVnIndicator::HandleResourceChange(TInt aType)
         {
         DrawDeferred(); // a new skin: new background and colour
         }
+    else if (aType == KEikDynamicLayoutVariantSwitch)
+        {
+        Layout();
+        CheckSoon();
+        }
+    }
+
+void CVnIndicator::HandleChangeInFocus()
+    {
+    CheckSoon(); // a new view, a dialog, a full-screen control
+    }
+
+void CVnIndicator::HandleDestructionOfFocusedItem()
+    {
+    CheckSoon();
+    }
+
+void CVnIndicator::HandleGainingForeground()
+    {
+    CheckSoon();
+    }
+
+void CVnIndicator::HandleLosingForeground()
+    {
     }
 
 static void AppendRect(TDes& aLine, const TDesC& aName, AknLayoutUtils::TAknLayoutMetrics aPane)
@@ -236,5 +462,10 @@ void CVnIndicator::Describe(TDes& aLine) const
         {
         const TRect r(bar->PositionRelativeToScreen(), bar->Size());
         aLine.AppendFormat(KBarFmt, r.iTl.iX, r.iTl.iY, r.iBr.iX, r.iBr.iY);
+        }
+    const TDesC& state = iWhy.Length() > 0 ? static_cast<const TDesC&>(iWhy) : KNotChecked();
+    if (aLine.Length() + state.Length() + 3 < aLine.MaxLength())
+        {
+        aLine.AppendFormat(KStateFmt, &state);
         }
     }
