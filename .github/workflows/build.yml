@@ -1,0 +1,90 @@
+# Builds vnkey.sisx in the public SDK image, as symbian/group/docker-build.sh does on the
+# Mac, with two differences: symbian/VERSION is not bumped (a build of a commit is that
+# commit's version), and it is a public build (VNKEY_PUBLIC=1): no Send log, the log stays
+# on the phone, no address baked in. The package is kept as the run's artifact; a tag
+# v<version> also makes a GitHub release with it, which the page (site/) links to.
+#
+# Signing: with the secrets VNKEY_DEV_KEY and VNKEY_DEV_CER (the contents of
+# symbian/sis/dev.key and dev.cer) the package is signed with the same key as the Mac's
+# builds; without them each run makes a throwaway key, which the hacked E72 takes as well.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'symbian/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - 'symbian/**'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Telex engine tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash symbian/test/run.sh
+
+  package:
+    name: Package (.sisx)
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # for the release, on a tag only
+    env:
+      VNKEY_KEEP_VERSION: 1
+      VNKEY_PUBLIC: 1
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Signing key
+        env:
+          DEV_KEY: ${{ secrets.VNKEY_DEV_KEY }}
+          DEV_CER: ${{ secrets.VNKEY_DEV_CER }}
+        run: |
+          if [ -n "$DEV_KEY" ] && [ -n "$DEV_CER" ]; then
+            printf '%s\n' "$DEV_KEY" > symbian/sis/dev.key
+            printf '%s\n' "$DEV_CER" > symbian/sis/dev.cer
+            echo "Signed with the key from the repository's secrets"
+          else
+            echo "::notice::No VNKEY_DEV_KEY / VNKEY_DEV_CER secrets: signed with a throwaway key"
+          fi
+
+      - name: Build in the SDK image
+        run: bash symbian/group/docker-build.sh
+
+      - name: Name the package
+        id: pkg
+        run: |
+          version="$(tr -d '\r\n' < symbian/VERSION)"
+          mkdir dist
+          cp symbian/sis/vnkey.sisx "dist/vnkey-$version.sisx"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Built vnkey-$version.sisx ($(wc -c < "dist/vnkey-$version.sisx") bytes)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vnkey-${{ steps.pkg.outputs.version }}
+          path: dist/*.sisx
+          if-no-files-found: error
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match symbian/VERSION ($VERSION); tag v$VERSION"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" "dist/vnkey-$VERSION.sisx" \
+            --title "VnKey $VERSION" --generate-notes

@@ -98,7 +98,9 @@ void CVnKeyAppUi::ConstructL()
 
     iCatcher = CVnCatcher::NewL(*this);
     iIndicator = CVnIndicator::NewL(this);
-    iSender = CVnLogSender::NewL(*this);
+#if VNKEY_SEND_LOG
+    iSender = CVnLogSender::NewL(*this); // a public build has none: its log stays on the phone
+#endif
     iGuardTimer = CPeriodic::NewL(CActive::EPriorityIdle);
     iNoteCallBack = new (ELeave) CAsyncCallBack(TCallBack(ShowSkippedNote, this),
                                                 CActive::EPriorityStandard);
@@ -233,9 +235,11 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             NoteResL(ENoteConfirm, R_VNKEY_NOTE_RELOADED, EFalse);
             return;
             }
+#if VNKEY_SEND_LOG
         case EVnCmdSendLog:
             SendLogL();
             return;
+#endif
         case EVnCmdClearLog:
             {
             iLog->Clear();
@@ -1057,6 +1061,10 @@ void CVnKeyAppUi::WriteSampleTriggersL(const TDesC& aName)
 // sends the log there; LogSent() says how it went.
 void CVnKeyAppUi::SendLogL()
     {
+    if (!iSender)
+        {
+        return; // a public build
+        }
     if (iSender->IsSending())
         {
         NoteResL(ENoteInfo, R_VNKEY_NOTE_BUSY, EFalse);

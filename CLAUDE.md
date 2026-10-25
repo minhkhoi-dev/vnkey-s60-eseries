@@ -118,6 +118,8 @@ Decided by Khoi on 2026-10-16:
   that are not Vietnamese (class, email, window); typing shortcuts (gõ tắt, ko → không).
   VNI is not wanted.
 - Done means: Messaging (SMS) and OttPilot's chat editor take Telex.
+- The public release has no Send log: its log stays on the phone (Khoi, 2026-10-25).
+  Builds on the Mac keep Send log for testing (see "Building", public builds).
 
 ## Design
 
@@ -380,6 +382,17 @@ file does not compile; `build.sh` stops when `vnkey.exe`, `vnkeyfep.dll`, either
 resource file or the icon's `vnkey_aif.mif` was not made. The plugin's DLL must have no `.data` or `.bss` (GnuPoc's `elf2e32` does not
 check it; `readelf -S` on the objects in the image does). The signing keys
 `symbian/sis/dev.key` and `dev.cer` are made by the first build and never committed.
+
+Public builds and GitHub (2026-10-25). `.github/workflows/build.yml` runs the engine's
+tests and the same Docker build on GitHub Actions for every push to main that touches
+`symbian/`, with two settings the Mac's builds do not have: `VNKEY_KEEP_VERSION=1` (the
+commit's own version, no bump) and `VNKEY_PUBLIC=1`. A public build has no Send log: no
+menu item, no Log server row (the last row, so no other row moves), no `CVnLogSender`, no
+address baked in; `build.sh` writes `VNKEY_SEND_LOG 0` to the generated
+`symbian/inc/VnKeyBuild.hrh` (git-ignored), which `vnkey.rss` and the code read. The
+package is the run's artifact; a tag `v<VERSION>` also makes a GitHub release with it.
+It is signed with the repository secrets `VNKEY_DEV_KEY` and `VNKEY_DEV_CER` (the
+contents of `dev.key` and `dev.cer`) when they are set, otherwise with a throwaway key.
 
 ## Roadmap
 
