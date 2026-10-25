@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # for the release, on a tag only
+      actions: write # to run pages.yml after the release
     env:
       VNKEY_KEEP_VERSION: 1
       VNKEY_PUBLIC: 1
@@ -88,3 +89,7 @@ jobs:
           fi
           gh release create "$GITHUB_REF_NAME" "dist/vnkey-$VERSION.sisx" \
             --title "VnKey $VERSION" --generate-notes
+          # The site's lite page carries the newest package (a release made with this
+          # job's token starts no other workflow by itself).
+          gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            || echo "::warning::Pages not redeployed; run the Pages workflow by hand"

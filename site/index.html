@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// The phones' own browsers (S60, Opera Mini) get the lite page; ?full keeps this one.
+if (!/[?&]full/.test(location.search) && /SymbianOS|SymbOS|Series ?60|Opera Mini|J2ME|MIDP/i.test(navigator.userAgent)) location.replace("m/");
+</script>
+<title>VnKey · Gõ tiếng Việt Telex cho Nokia E72</title>
+<meta name="description" content="VnKey mang kiểu gõ Telex của Unikey vào mọi ứng dụng trên Nokia E72 (Symbian S60 3rd Edition FP2).">
+<meta property="og:title" content="VnKey · Gõ tiếng Việt Telex cho Nokia E72">
+<meta property="og:description" content="Gõ tiếng Việt trong mọi ứng dụng trên điện thoại Symbian: Tin nhắn, trình duyệt, chat. Telex như Unikey, ngay trên bàn phím QWERTY của E72.">
+<meta property="og:locale" content="vi_VN">
+<meta name="theme-color" content="#C8102E">
+<link rel="icon" href="vnkey.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="vi" href="./">
+<link rel="alternate" hreflang="en" href="en/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="vnkey.svg" alt="" width="30" height="30">VnKey</a>
+    <nav aria-label="Các phần">
+      <a href="#features">Tính năng</a>
+      <a href="#telex">Telex</a>
+      <a href="#install">Cài đặt</a>
+      <a href="#build">Mã nguồn</a>
+      <a class="gh" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">GitHub</a>
+    </nav>
+    <div class="lang" aria-label="Ngôn ngữ"><a href="./" aria-current="page">VI</a><a href="en/" hreflang="en" lang="en">EN</a></div>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Nokia E72 · Symbian S60 3rd Edition FP2</span>
+      <h1 id="hero-title">Gõ <span class="hl">tiếng Việt</span> trong mọi ứng dụng trên Nokia E72.</h1>
+      <p class="lede">VnKey mang kiểu gõ Telex quen thuộc của Unikey lên Symbian. Chỉ cần gõ các phím chữ trên bàn phím QWERTY, chữ Việt có dấu hiện ra ngay trong Tin nhắn, trình duyệt, ứng dụng chat và mọi ô nhập chữ khác.</p>
+      <div class="cta">
+        <a class="btn btn-primary js-dl" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
+          Tải file .sisx
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          Mã nguồn trên GitHub
+        </a>
+      </div>
+      <p class="meta"><span class="js-ver" data-fmt="Phiên bản %s">Bản mới nhất trên GitHub</span> · đã chạy thử trên E72 thật · cần máy đã hack (<a href="#install">xem Cài đặt</a>)</p>
+    </div>
+
+    <figure class="device" style="margin:0">
+      <div class="phone" aria-hidden="true">
+        <div class="earpiece"></div>
+        <div class="bezel">
+          <div class="screen">
+            <div class="s60">
+              <div class="sp">
+                <span class="sig"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="title">Tin nhắn mới</span>
+                <span class="bat"><i></i><i></i><i></i><i></i><b></b></span>
+              </div>
+              <div class="ed">
+                <div class="to">Đến: <b>Lan</b></div>
+                <div class="msg" id="msg"><span id="typed">Chào bạn, mình đang gõ tiếng Việt trên Nokia E72, không cần máy tính.</span><span class="caret"></span></div>
+              </div>
+              <div class="cp">
+                <span>Tùy chọn</span>
+                <span class="mid">
+                  <svg class="wlan" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><path d="M1.5 5a6.5 6.5 0 0 1 9 0M3.3 7a4 4 0 0 1 5.4 0"/><circle cx="6" cy="9.2" r="1" fill="#fff" stroke="none"/></svg>
+                  <svg id="mark" viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path id="markLetter" fill="#fff" d=""/></svg>
+                  <span id="clock">09:41</span>
+                </span>
+                <span>Đóng</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="navkeys">
+          <span class="nk call"></span><span class="nk"></span><span class="dpad"></span><span class="nk"></span><span class="nk end"></span>
+        </div>
+        <div class="kb" id="kb">
+          <span class="key" data-k="q">q</span><span class="key" data-k="w">w</span><span class="key" data-k="e">e</span><span class="key" data-k="r">r<sup>1</sup></span><span class="key" data-k="t">t<sup>2</sup></span><span class="key" data-k="y">y<sup>3</sup></span><span class="key" data-k="u">u<sup>*</sup></span><span class="key" data-k="i">i</span><span class="key" data-k="o">o</span><span class="key" data-k="p">p</span>
+          <span class="key" data-k="a">a</span><span class="key" data-k="s">s</span><span class="key" data-k="d">d</span><span class="key" data-k="f">f<sup>4</sup></span><span class="key" data-k="g">g<sup>5</sup></span><span class="key" data-k="h">h<sup>6</sup></span><span class="key" data-k="j">j<sup>#</sup></span><span class="key" data-k="k">k</span><span class="key" data-k="l">l</span><span class="key mod" data-k="bksp">⌫</span>
+          <span class="key mod" data-k="shift">⇧</span><span class="key" data-k="z">z</span><span class="key" data-k="x">x</span><span class="key" data-k="c">c</span><span class="key" data-k="v">v<sup>7</sup></span><span class="key" data-k="b">b<sup>8</sup></span><span class="key" data-k="n">n<sup>9</sup></span><span class="key" data-k="m">m<sup>0</sup></span><span class="key" data-k=".">.</span><span class="key mod" data-k="enter">↵</span>
+          <span class="key mod" data-k="fn">Fn</span><span class="key mod" data-k="ctrl">Ctrl</span><span class="key mod" data-k="sym">Sym</span><span class="key space" data-k=" "></span><span class="key" data-k=",">,</span><span class="key" data-k="?">?</span><span class="key mod" data-k="shift2">⇧</span>
+        </div>
+      </div>
+      <figcaption class="demo-cap">
+        <span class="lbl">Bạn gõ</span><kbd id="capKeys">Vieejt</kbd><span class="arrow" aria-hidden="true">→</span><span class="out" id="capWord">Việt</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="features" class="alt" aria-labelledby="features-title">
+  <div class="wrap">
+    <p class="kicker">Tính năng</p>
+    <h2 id="features-title">Unikey, trên chiếc điện thoại đời 2009</h2>
+    <p class="sub">Những gì bạn quen dùng với Telex trên máy tính, giờ chạy ngay trong các ứng dụng của điện thoại, với chính bàn phím của máy.</p>
+    <div class="grid3">
+      <article class="card">
+        <div class="sample"><kbd class="k">Vieejt</kbd><span class="to">→</span><span class="res">Việt</span></div>
+        <h3>Mọi ứng dụng</h3>
+        <p>Tin nhắn, trình duyệt, ứng dụng chat: VnKey gõ được trong mọi ô nhập chữ. Phím Shift, tự viết hoa đầu câu và phím Fn vẫn hoạt động như cũ.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><kbd class="k">Ctrl</kbd><kbd class="k">Space</kbd><span class="mk" title="Tiếng Việt"><svg viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path fill="#fff" d="M3 3h1v4H3zM7 3h1v4H7zM4 7h1v2H4zM6 7h1v2H6zM5 9h1v1H5z"/></svg></span><span class="mk" title="Tiếng Anh"><svg viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path fill="#fff" d="M3 3h5v1H3zM3 4h1v5H3zM4 6h3v1H4zM3 9h5v1H3z"/></svg></span></div>
+        <h3>Một phím để chuyển</h3>
+        <p>Ctrl+Space chuyển qua lại giữa tiếng Việt và tiếng Anh. Dấu [V] hoặc [E] nhỏ nằm ở thanh dưới, cạnh đồng hồ, và tự ẩn khi chơi game hay xem video toàn màn hình. Có thể đặt phím khác trong <code>triggers.txt</code>.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res" style="color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:2px">tẽt</span><span class="to">→</span><span class="res">text</span></div>
+        <h3>Từ tiếng Anh vẫn là tiếng Anh</h3>
+        <p>Khi bật kiểm tra chính tả, từ nào không thể là tiếng Việt sẽ được trả lại đúng các phím đã gõ khi bạn gõ xong từ: <b>tẽt</b> thành <b>text</b>, <b>ưindow</b> thành <b>window</b>.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><kbd class="k">ko</kbd><span class="to">→</span><span class="res">không</span></div>
+        <h3>Gõ tắt</h3>
+        <p><b>ko</b> → không, <b>dc</b> → được, <b>vn</b> → Việt Nam, giữ đúng kiểu hoa thường bạn gõ. Thêm từ của riêng bạn vào <code>macros.txt</code> trên thẻ nhớ.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res">hòa</span><span class="tag">kiểu cũ</span><span class="to">·</span><span class="res">hoà</span><span class="tag">kiểu mới</span></div>
+        <h3>Kiểu bỏ dấu tùy bạn</h3>
+        <p>Kiểu cũ (hòa, thúy, khỏe) hoặc kiểu mới (hoà, thuý, khoẻ). Dấu tự dời chỗ khi từ dài thêm: hòa, gõ thêm <b>n</b>, thành hoàn.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res">Tiếng Việt</span><span class="to">/</span><span class="res">English</span></div>
+        <h3>Cài một lần là xong</h3>
+        <p>VnKey tự chạy khi bật máy và tự bật lại Telex. Màn hình cài đặt có tiếng Việt và tiếng Anh, và mọi chữ đều là Unicode dựng sẵn.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="how-title">
+  <div class="wrap">
+    <p class="kicker">Cách hoạt động</p>
+    <h2 id="how-title">Làm việc cùng bộ gõ có sẵn của máy</h2>
+    <p class="sub">VnKey thêm một plugin nhỏ mà máy nạp vào từng ứng dụng. Bộ gõ gốc của máy vẫn lo việc nhận phím; VnKey chỉ sửa lại chữ.</p>
+    <ol class="steps">
+      <li><strong>Bạn nhấn một phím</strong>VnKey ghi nhớ từ đứng trước con trỏ.</li>
+      <li><strong>Máy gõ phím đó</strong>Với chữ hoa thường, Shift và lớp phím Fn như mọi khi, như thể không có VnKey.</li>
+      <li><strong>VnKey sửa lại từ</strong>Bộ gõ Telex đổi các phím thành chữ Việt, ngay tại chỗ, ngay sau phím vừa nhấn.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="telex" class="alt" aria-labelledby="telex-title">
+  <div class="wrap">
+    <p class="kicker">Telex</p>
+    <h2 id="telex-title">Telex trong một phút</h2>
+    <p class="sub">Gõ chữ cái, rồi gõ phím thêm dấu. Thứ tự rất thoải mái: dấu mũ, dấu móc và dấu thanh đều có thể gõ ở cuối từ.</p>
+    <div class="telex">
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Chữ</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">aa</kbd></td><td class="r">â</td><td></td></tr>
+            <tr><td><kbd class="k">aw</kbd></td><td class="r">ă</td><td></td></tr>
+            <tr><td><kbd class="k">ee</kbd></td><td class="r">ê</td><td></td></tr>
+            <tr><td><kbd class="k">oo</kbd></td><td class="r">ô</td><td></td></tr>
+            <tr><td><kbd class="k">ow</kbd></td><td class="r">ơ</td><td></td></tr>
+            <tr><td><kbd class="k">uw</kbd></td><td class="r">ư</td><td>hoặc chỉ <kbd class="k">w</kbd></td></tr>
+            <tr><td><kbd class="k">dd</kbd></td><td class="r">đ</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Dấu thanh</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">s</kbd></td><td class="r">á</td><td>sắc</td></tr>
+            <tr><td><kbd class="k">f</kbd></td><td class="r">à</td><td>huyền</td></tr>
+            <tr><td><kbd class="k">r</kbd></td><td class="r">ả</td><td>hỏi</td></tr>
+            <tr><td><kbd class="k">x</kbd></td><td class="r">ã</td><td>ngã</td></tr>
+            <tr><td><kbd class="k">j</kbd></td><td class="r">ạ</td><td>nặng</td></tr>
+            <tr><td><kbd class="k">z</kbd></td><td class="r">a</td><td>xóa dấu</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card tricks">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Cả từ</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">toans</kbd></td><td class="r">toán</td><td>dấu thanh ở cuối</td></tr>
+            <tr><td><kbd class="k">vietej</kbd></td><td class="r">việt</td><td>dấu mũ ở cuối</td></tr>
+            <tr><td><kbd class="k">nguoiwf</kbd></td><td class="r">người</td><td>một w cho ươ</td></tr>
+            <tr><td><kbd class="k">hoafn</kbd></td><td class="r">hoàn</td><td>dấu tự dời</td></tr>
+            <tr><td><kbd class="k">ass</kbd></td><td class="r">as</td><td>gõ hai lần để bỏ</td></tr>
+            <tr><td><kbd class="k">thuowr</kbd></td><td class="r">thuở</td><td>khi gõ xong từ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">Mọi ví dụ trên trang này, kể cả phần gõ minh họa, đều do chính bộ gõ Telex của VnKey tạo ra.</p>
+  </div>
+</section>
+
+<section id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <p class="kicker">Cài đặt</p>
+    <h2 id="install-title">Cài vào máy của bạn</h2>
+    <p class="sub">Một file cài đặt, cài như mọi ứng dụng Symbian khác.</p>
+    <div class="install">
+      <ol class="howto">
+        <li><strong>Tải</strong> file <code class="js-file">vnkey-x.y.z.sisx</code> mới nhất ở trang <a class="js-dl" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest">Releases</a>, bằng trình duyệt của điện thoại, hoặc tải về máy tính rồi chép sang điện thoại.</li>
+        <li><strong>Cài đặt.</strong> Mọi thứ được cài vào bộ nhớ máy (C:), nên VnKey vẫn chạy khi rút thẻ nhớ.</li>
+        <li><strong>Mở VnKey</strong> và chọn <i class="vi">Telex mọi ứng dụng</i>: <i class="vi">Bật</i>. Màn hình của VnKey mặc định là tiếng Việt; dòng <i class="vi">Ngôn ngữ (Language)</i> đổi sang tiếng Anh.</li>
+        <li><strong>Gõ thử:</strong> trong Tin nhắn, gõ <kbd class="k">Vieejt</kbd> và dấu cách sẽ được <b>Việt</b>. Ctrl+Space để chuyển sang tiếng Anh và ngược lại.</li>
+      </ol>
+      <div>
+        <div class="card req">
+          <h3>Bạn cần có</h3>
+          <ul>
+            <li><strong>Nokia E72</strong> (S60 3rd Edition Feature Pack 2, Symbian OS 9.3). VnKey được viết cho máy này và đã chạy thử trên máy này. Các máy FP2 có bàn phím QWERTY khác có thể chạy được nhưng chưa được thử.</li>
+            <li><strong>Máy đã hack</strong> (vá InstallServer và Open4All). Plugin của VnKey được nạp vào mọi ứng dụng, và file tự ký chỉ làm được điều đó trên máy đã vá.</li>
+          </ul>
+        </div>
+        <div class="card good">
+          <h3>Cần biết</h3>
+          <ul>
+            <li><strong>Tắt:</strong> chọn Telex mọi ứng dụng: Tắt, trả lời Không, rồi khởi động lại máy. Tắt ngay lập tức có thể làm máy tự khởi động lại, nên khởi động lại là cách an toàn.</li>
+            <li><strong>Cập nhật hoặc gỡ cài đặt:</strong> tắt như trên và khởi động lại máy trước.</li>
+            <li><strong>Tắt khẩn cấp:</strong> tạo thư mục tên <code>off</code> trong <code>E:\VnKey\</code> (dùng Quản lý file) và plugin sẽ không đụng tới ứng dụng nào.</li>
+            <li><strong>Riêng tư:</strong> VnKey lưu nhật ký ngay trên máy, ở <code>E:\VnKey\vnkey.log</code>, và không gửi gì đi đâu cả. Ô mật khẩu không bao giờ được ghi lại.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="build" class="alt" aria-labelledby="build-title">
+  <div class="wrap build">
+    <div>
+      <p class="kicker">Mã nguồn</p>
+      <h2 id="build-title">Tự build từ mã nguồn</h2>
+      <p>Việc build chạy trong một Docker image công khai có sẵn SDK S60 3rd Edition FP2, GnuPoc và GCCE, nên chỉ cần một máy Mac, Linux hoặc Windows (WSL) có Docker.</p>
+      <p>GitHub Actions chạy đúng quy trình build này mỗi lần push. Các file trên trang Releases được build từ đó, từ đúng commit được gắn tag.</p>
+    </div>
+    <pre><code><span class="c"># kiểm thử bộ gõ Telex, bằng trình biên dịch của máy</span>
+<span class="p">$ </span>bash symbian/test/run.sh
+
+<span class="c"># tạo file cài đặt: symbian/sis/vnkey.sisx</span>
+<span class="p">$ </span>bash symbian/group/docker-build.sh</code></pre>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="vnkey.svg" alt="" width="24" height="24">VnKey</a>
+    <p>Dự án cá nhân của <a href="https://github.com/minhkhoi-dev">Khoi Nguyen</a>. Không liên quan đến Nokia, HMD Global hay dự án Unikey. <a href="m/">Bản nhẹ cho điện thoại S60</a>.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

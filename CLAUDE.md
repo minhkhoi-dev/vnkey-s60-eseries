@@ -394,6 +394,32 @@ package is the run's artifact; a tag `v<VERSION>` also makes a GitHub release wi
 It is signed with the repository secrets `VNKEY_DEV_KEY` and `VNKEY_DEV_CER` (the
 contents of `dev.key` and `dev.cer`) when they are set, otherwise with a throwaway key.
 
+The introduction page is `site/` (no build step), published to GitHub Pages by
+`.github/workflows/pages.yml` (Pages source: GitHub Actions). It is in Vietnamese by
+default, `site/index.html`, with English as the other choice, `site/en/index.html`
+(Khoi, 2026-10-25); a VI / EN switch in the header links the two. Both pages share
+`style.css`, `app.js` (the latest release and the typing demo) and `vnkey.svg`, so a
+change of text goes into both pages. Its download links point at the latest release.
+The typing demo's frames (in `app.js`) and the Telex examples were made by the engine
+itself (`TVnTelex` driven like the tests' pretend editor), so regenerate them the same
+way if the demo text or the engine changes.
+
+The lite page for the phone's own browsers (Khoi, 2026-10-25: the S60v3 browser and
+Opera Mini) is `site/m/index.html` (Vietnamese) and `site/m/en.html`: XHTML Mobile
+Profile 1.2, about 5 KB, no scripts, no web fonts, only `icon.png` (32 px, rendered
+from the SVG) loaded, and only ASCII and letters in the text (the phone's font has
+every Vietnamese letter but maybe not symbols such as →, so arrows are `->`). The full
+pages send S60 and Opera Mini user agents there (a script at the top of `<head>`;
+`?full` keeps the full page) and link it in the footer. GitHub Pages is HTTPS only
+(http:// on github.io answers 301) and takes TLS 1.2 and later, refusing TLS 1.0
+(checked 2026-10-25 from the SDK image's OpenSSL 1.0.1); a stock S60 browser has only
+TLS 1.0, Khoi's E72 has the nnproject TLS patch (OttPilot's `docs/DEVICE.md`, TLS).
+The release downloads on github.com refuse TLS 1.0 too, so the Pages workflow puts the
+latest release's `.sisx` next to the lite page and points its link (`id="dl"`, the
+`VERSION` comment) at it; Pages serves `.sisx` as `application/vnd.symbian.install`
+(mime-db), as the web stub does. A release made by `build.yml` runs `pages.yml` again
+(`gh workflow run`), since a release made with the job's token starts no workflow.
+
 ## Roadmap
 
 1. The probe (app 0.0.x). Telex in VnKey's own editor with the phone's FEP in it, as

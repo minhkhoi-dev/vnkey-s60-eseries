@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="HandheldFriendly" content="true" />
+<title>VnKey - Vietnamese typing for the Nokia E72</title>
+<link rel="icon" type="image/png" href="icon.png" />
+<!-- The lite page in English; see index.html. Same text as index.html. -->
+<style type="text/css">
+body { margin: 0; padding: 0; background: #ffffff; color: #222222; font-family: sans-serif; }
+a { color: #b00e28; }
+.top { background: #c8102e; color: #ffffff; padding: 5px 6px; }
+.top img { float: left; margin: 0 6px 0 0; border: 0; }
+.top b { font-size: 1.25em; }
+.top span { display: block; margin-left: 38px; font-size: 0.85em; }
+.clr { clear: both; }
+.dl { margin: 6px; padding: 6px; background: #fff4df; border: 1px solid #f29f05; text-align: center; }
+.dl a { font-size: 1.15em; font-weight: bold; color: #c8102e; }
+.dl small { display: block; margin-top: 3px; color: #6b5a3a; }
+h2 { margin: 6px 0 0 0; padding: 3px 6px; background: #f3ebe2; color: #8a0a1e; font-size: 1em; border-top: 1px solid #e3d5c6; }
+.s { padding: 4px 6px; }
+ol, ul { margin: 0; padding: 0 0 0 18px; }
+li { margin: 2px 0; }
+table { border-collapse: collapse; }
+td { padding: 1px 8px 1px 0; }
+.k { font-family: monospace; color: #000000; background: #eeeeee; }
+.foot { margin-top: 8px; padding: 6px; background: #2a2420; color: #cfc6bd; font-size: 0.85em; }
+.foot a { color: #ffffff; }
+</style>
+</head>
+<body>
+
+<div class="top">
+<img src="icon.png" width="32" height="32" alt="" />
+<b>VnKey</b>
+<span>Vietnamese Telex typing in every app on the Nokia E72</span>
+<div class="clr"></div>
+</div>
+
+<div class="dl">
+<a href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest" id="dl">Download VnKey<!--VERSION--> (.sisx)</a>
+<small>Needs a hacked phone (InstallServer and Open4All patches).</small>
+</div>
+
+<h2>Install</h2>
+<div class="s">
+<ol>
+<li>Download the .sisx above and install it to the phone memory (C:).</li>
+<li>Open VnKey and set <b>Telex mọi ứng dụng</b> (Telex in all apps) to <b>Bật</b> (On).</li>
+<li>In Messaging, type <span class="k">Vieejt</span> and a space: you get <b>Việt</b>.</li>
+<li><b>Ctrl+Space</b> switches Vietnamese / English. A [V] or [E] shows in the bottom bar.</li>
+</ol>
+</div>
+
+<h2>Telex</h2>
+<div class="s">
+<table>
+<tr><td class="k">aa</td><td>â</td><td class="k">s</td><td>á sắc</td></tr>
+<tr><td class="k">aw</td><td>ă</td><td class="k">f</td><td>à huyền</td></tr>
+<tr><td class="k">ee</td><td>ê</td><td class="k">r</td><td>ả hỏi</td></tr>
+<tr><td class="k">oo</td><td>ô</td><td class="k">x</td><td>ã ngã</td></tr>
+<tr><td class="k">ow</td><td>ơ</td><td class="k">j</td><td>ạ nặng</td></tr>
+<tr><td class="k">uw, w</td><td>ư</td><td class="k">z</td><td>no tone</td></tr>
+<tr><td class="k">dd</td><td>đ</td><td></td><td></td></tr>
+</table>
+Marks and tones can also come at the end of the word: <span class="k">toans</span> -> toán, <span class="k">nguoiwf</span> -> người. Press twice to undo: <span class="k">ass</span> -> as.
+</div>
+
+<h2>Features</h2>
+<div class="s">
+<ul>
+<li>Works in every app: Messaging, the browser, chat.</li>
+<li>English words stay English: tẽt -> text.</li>
+<li>Shortcuts: ko -> không, dc -> được (edit macros.txt).</li>
+<li>Traditional (hòa) or modern (hoà) tone placement.</li>
+<li>Starts with the phone. Screens in Vietnamese or English.</li>
+</ul>
+</div>
+
+<h2>Good to know</h2>
+<div class="s">
+<ul>
+<li><b>Turning it off:</b> set Telex in all apps to Off, answer No, then restart the phone.</li>
+<li><b>Updating, removing:</b> turn it off as above and restart first.</li>
+<li><b>Emergency off:</b> make a folder <span class="k">off</span> in E:\VnKey\</li>
+<li><b>Privacy:</b> the log stays on the phone (E:\VnKey\vnkey.log); nothing is sent anywhere.</li>
+<li><b>Download fails?</b> The S60 browser only has TLS 1.0 and GitHub needs TLS 1.2. Install the TLS patch (<a href="https://nnproject.cc/tls/">nnproject.cc/tls</a>), or download on a computer and copy the file to the phone.</li>
+</ul>
+</div>
+
+<div class="foot">
+<a href="./">Tiếng Việt</a> | <a href="../en/?full">Full page</a> | <a href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">GitHub</a><br />
+VnKey, a hobby project by Khoi Nguyen.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// The phones' own browsers (S60, Opera Mini) get the lite page; ?full keeps this one.
+if (!/[?&]full/.test(location.search) && /SymbianOS|SymbOS|Series ?60|Opera Mini|J2ME|MIDP/i.test(navigator.userAgent)) location.replace("../m/en.html");
+</script>
+<title>VnKey · Vietnamese Telex for the Nokia E72</title>
+<meta name="description" content="VnKey brings Telex, the Vietnamese typing method of Unikey, to every app on the Nokia E72 (Symbian S60 3rd Edition FP2).">
+<meta property="og:title" content="VnKey · Vietnamese Telex for the Nokia E72">
+<meta property="og:description" content="Type Vietnamese in every app on a Symbian phone: Messaging, the browser, chat. Telex like Unikey, on the E72's QWERTY keyboard.">
+<meta name="theme-color" content="#C8102E">
+<link rel="icon" href="../vnkey.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="vi" href="../">
+<link rel="alternate" hreflang="en" href="./">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="../vnkey.svg" alt="" width="30" height="30">VnKey</a>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#telex">Telex</a>
+      <a href="#install">Install</a>
+      <a href="#build">Build</a>
+      <a class="gh" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">GitHub</a>
+    </nav>
+    <div class="lang" aria-label="Language"><a href="../" hreflang="vi" lang="vi">VI</a><a href="./" aria-current="page">EN</a></div>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Nokia E72 · Symbian S60 3rd Edition FP2</span>
+      <h1 id="hero-title">Type <span class="hl">tiếng Việt</span> in every app on your Nokia E72.</h1>
+      <p class="lede">VnKey brings Telex, the typing method of Unikey, to Symbian. Press plain letters on the QWERTY keyboard and Vietnamese appears in Messaging, the browser, chat apps and every other text field.</p>
+      <div class="cta">
+        <a class="btn btn-primary js-dl" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
+          Download .sisx
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          Source on GitHub
+        </a>
+      </div>
+      <p class="meta"><span class="js-ver" data-fmt="Version %s">Latest release on GitHub</span> · tested on a real E72 · needs a hacked phone (<a href="#install">see Install</a>)</p>
+    </div>
+
+    <figure class="device" style="margin:0">
+      <div class="phone" aria-hidden="true">
+        <div class="earpiece"></div>
+        <div class="bezel">
+          <div class="screen">
+            <div class="s60">
+              <div class="sp">
+                <span class="sig"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="title">New message</span>
+                <span class="bat"><i></i><i></i><i></i><i></i><b></b></span>
+              </div>
+              <div class="ed">
+                <div class="to">To: <b>Lan</b></div>
+                <div class="msg" id="msg"><span id="typed">Chào bạn, mình đang gõ tiếng Việt trên Nokia E72, không cần máy tính.</span><span class="caret"></span></div>
+              </div>
+              <div class="cp">
+                <span>Options</span>
+                <span class="mid">
+                  <svg class="wlan" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><path d="M1.5 5a6.5 6.5 0 0 1 9 0M3.3 7a4 4 0 0 1 5.4 0"/><circle cx="6" cy="9.2" r="1" fill="#fff" stroke="none"/></svg>
+                  <svg id="mark" viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path id="markLetter" fill="#fff" d=""/></svg>
+                  <span id="clock">09:41</span>
+                </span>
+                <span>Close</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="navkeys">
+          <span class="nk call"></span><span class="nk"></span><span class="dpad"></span><span class="nk"></span><span class="nk end"></span>
+        </div>
+        <div class="kb" id="kb">
+          <span class="key" data-k="q">q</span><span class="key" data-k="w">w</span><span class="key" data-k="e">e</span><span class="key" data-k="r">r<sup>1</sup></span><span class="key" data-k="t">t<sup>2</sup></span><span class="key" data-k="y">y<sup>3</sup></span><span class="key" data-k="u">u<sup>*</sup></span><span class="key" data-k="i">i</span><span class="key" data-k="o">o</span><span class="key" data-k="p">p</span>
+          <span class="key" data-k="a">a</span><span class="key" data-k="s">s</span><span class="key" data-k="d">d</span><span class="key" data-k="f">f<sup>4</sup></span><span class="key" data-k="g">g<sup>5</sup></span><span class="key" data-k="h">h<sup>6</sup></span><span class="key" data-k="j">j<sup>#</sup></span><span class="key" data-k="k">k</span><span class="key" data-k="l">l</span><span class="key mod" data-k="bksp">⌫</span>
+          <span class="key mod" data-k="shift">⇧</span><span class="key" data-k="z">z</span><span class="key" data-k="x">x</span><span class="key" data-k="c">c</span><span class="key" data-k="v">v<sup>7</sup></span><span class="key" data-k="b">b<sup>8</sup></span><span class="key" data-k="n">n<sup>9</sup></span><span class="key" data-k="m">m<sup>0</sup></span><span class="key" data-k=".">.</span><span class="key mod" data-k="enter">↵</span>
+          <span class="key mod" data-k="fn">Fn</span><span class="key mod" data-k="ctrl">Ctrl</span><span class="key mod" data-k="sym">Sym</span><span class="key space" data-k=" "></span><span class="key" data-k=",">,</span><span class="key" data-k="?">?</span><span class="key mod" data-k="shift2">⇧</span>
+        </div>
+      </div>
+      <figcaption class="demo-cap">
+        <span class="lbl">You press</span><kbd id="capKeys">Vieejt</kbd><span class="arrow" aria-hidden="true">→</span><span class="out" id="capWord">Việt</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="features" class="alt" aria-labelledby="features-title">
+  <div class="wrap">
+    <p class="kicker">Features</p>
+    <h2 id="features-title">Unikey, on a phone from 2009</h2>
+    <p class="sub">Everything you expect from Telex on a computer, working inside the phone's own apps, with the phone's own keyboard.</p>
+    <div class="grid3">
+      <article class="card">
+        <div class="sample"><kbd class="k">Vieejt</kbd><span class="to">→</span><span class="res">Việt</span></div>
+        <h3>Every app</h3>
+        <p>Messaging, the browser, chat apps: VnKey works in any text field. Shift, automatic capitals and the Fn keys behave as they always do.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><kbd class="k">Ctrl</kbd><kbd class="k">Space</kbd><span class="mk" title="Vietnamese"><svg viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path fill="#fff" d="M3 3h1v4H3zM7 3h1v4H7zM4 7h1v2H4zM6 7h1v2H6zM5 9h1v1H5z"/></svg></span><span class="mk" title="English"><svg viewBox="0 0 11 13" shape-rendering="crispEdges"><rect x=".5" y=".5" width="10" height="12" fill="none" stroke="#fff"/><path fill="#fff" d="M3 3h5v1H3zM3 4h1v5H3zM4 6h3v1H4zM3 9h5v1H3z"/></svg></span></div>
+        <h3>One key to switch</h3>
+        <p>Ctrl+Space switches between Vietnamese and English. A small [V] or [E] sits in the bottom bar by the clock and steps aside in full-screen games and video. Other keys can be set in <code>triggers.txt</code>.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res" style="color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:2px">tẽt</span><span class="to">→</span><span class="res">text</span></div>
+        <h3>English words stay English</h3>
+        <p>With spell check on, a word that cannot be Vietnamese gets its keys back as you finish it: <b>tẽt</b> becomes <b>text</b>, <b>ưindow</b> becomes <b>window</b>.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><kbd class="k">ko</kbd><span class="to">→</span><span class="res">không</span></div>
+        <h3>Shortcuts (gõ tắt)</h3>
+        <p><b>ko</b> → không, <b>dc</b> → được, <b>vn</b> → Việt Nam, in the case you typed them. Add your own to <code>macros.txt</code> on the memory card.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res">hòa</span><span class="tag">traditional</span><span class="to">·</span><span class="res">hoà</span><span class="tag">modern</span></div>
+        <h3>Your tone style</h3>
+        <p>Traditional (hòa, thúy, khỏe) or modern (hoà, thuý, khoẻ). The tone moves as the word grows: hòa, then <b>n</b>, gives hoàn.</p>
+      </article>
+      <article class="card">
+        <div class="sample"><span class="res">Tiếng Việt</span><span class="to">/</span><span class="res">English</span></div>
+        <h3>Set it and forget it</h3>
+        <p>VnKey starts with the phone and turns Telex back on by itself. Its settings screen is in Vietnamese or English, and every letter is precomposed Unicode.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="how-title">
+  <div class="wrap">
+    <p class="kicker">How it works</p>
+    <h2 id="how-title">It works with the phone's own keyboard input</h2>
+    <p class="sub">VnKey adds a small input plugin that the phone loads into each app. The phone's own input method stays in charge of the keys; VnKey only fixes up the word.</p>
+    <ol class="steps">
+      <li><strong>You press a key</strong>VnKey notes the word before the cursor.</li>
+      <li><strong>The phone types it</strong>With its usual case, Shift and Fn layer, as if VnKey were not there.</li>
+      <li><strong>VnKey rewrites the word</strong>The Telex engine turns the keys into Vietnamese, in place, right after the key.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="telex" class="alt" aria-labelledby="telex-title">
+  <div class="wrap">
+    <p class="kicker">Telex</p>
+    <h2 id="telex-title">Telex in a minute</h2>
+    <p class="sub">Type the letter, then the key that adds its mark or tone. The order is forgiving: marks and tones can also come at the end of the word.</p>
+    <div class="telex">
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Letters</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">aa</kbd></td><td class="r">â</td><td></td></tr>
+            <tr><td><kbd class="k">aw</kbd></td><td class="r">ă</td><td></td></tr>
+            <tr><td><kbd class="k">ee</kbd></td><td class="r">ê</td><td></td></tr>
+            <tr><td><kbd class="k">oo</kbd></td><td class="r">ô</td><td></td></tr>
+            <tr><td><kbd class="k">ow</kbd></td><td class="r">ơ</td><td></td></tr>
+            <tr><td><kbd class="k">uw</kbd></td><td class="r">ư</td><td>or <kbd class="k">w</kbd> alone</td></tr>
+            <tr><td><kbd class="k">dd</kbd></td><td class="r">đ</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Tones</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">s</kbd></td><td class="r">á</td><td>sắc</td></tr>
+            <tr><td><kbd class="k">f</kbd></td><td class="r">à</td><td>huyền</td></tr>
+            <tr><td><kbd class="k">r</kbd></td><td class="r">ả</td><td>hỏi</td></tr>
+            <tr><td><kbd class="k">x</kbd></td><td class="r">ã</td><td>ngã</td></tr>
+            <tr><td><kbd class="k">j</kbd></td><td class="r">ạ</td><td>nặng</td></tr>
+            <tr><td><kbd class="k">z</kbd></td><td class="r">a</td><td>no tone</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card tricks">
+        <table class="tbl">
+          <thead><tr><th colspan="2">Whole words</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><kbd class="k">toans</kbd></td><td class="r">toán</td><td>tone last</td></tr>
+            <tr><td><kbd class="k">vietej</kbd></td><td class="r">việt</td><td>mark last</td></tr>
+            <tr><td><kbd class="k">nguoiwf</kbd></td><td class="r">người</td><td>one w for ươ</td></tr>
+            <tr><td><kbd class="k">hoafn</kbd></td><td class="r">hoàn</td><td>tone moves</td></tr>
+            <tr><td><kbd class="k">ass</kbd></td><td class="r">as</td><td>twice to undo</td></tr>
+            <tr><td><kbd class="k">thuowr</kbd></td><td class="r">thuở</td><td>at the word's end</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">Every example on this page, the typing demo included, was produced by VnKey's own Telex engine.</p>
+  </div>
+</section>
+
+<section id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <p class="kicker">Install</p>
+    <h2 id="install-title">Get it on your phone</h2>
+    <p class="sub">One package, installed like any other Symbian app.</p>
+    <div class="install">
+      <ol class="howto">
+        <li><strong>Download</strong> the latest <code class="js-file">vnkey-x.y.z.sisx</code> from <a class="js-dl" href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest">Releases</a>, in the phone's browser or on a computer and then onto the phone.</li>
+        <li><strong>Install it.</strong> Everything goes to the phone memory (C:), so VnKey keeps working with the memory card out.</li>
+        <li><strong>Open VnKey</strong> and set <i class="vi">Telex mọi ứng dụng</i> (Telex in all apps) to <i class="vi">Bật</i> (On). The screens are in Vietnamese at first; <i class="vi">Ngôn ngữ</i> switches them to English.</li>
+        <li><strong>Try it:</strong> in Messaging, type <kbd class="k">Vieejt</kbd> and a space to get <b>Việt</b>. Ctrl+Space switches to English and back.</li>
+      </ol>
+      <div>
+        <div class="card req">
+          <h3>What you need</h3>
+          <ul>
+            <li><strong>A Nokia E72</strong> (S60 3rd Edition Feature Pack 2, Symbian OS 9.3). VnKey is built for it and tested on it. Other FP2 phones with a QWERTY keyboard may work but have not been tried.</li>
+            <li><strong>A hacked phone</strong> (InstallServer and Open4All patches). The input plugin loads into every app, and a self-signed package can only do that on a patched phone.</li>
+          </ul>
+        </div>
+        <div class="card good">
+          <h3>Good to know</h3>
+          <ul>
+            <li><strong>Turning it off:</strong> set Telex in all apps to Off, answer No, and restart the phone. Switching it off on the spot can restart the phone, so the restart is the safe way.</li>
+            <li><strong>Updating or removing:</strong> turn it off and restart first.</li>
+            <li><strong>Emergency off:</strong> make a folder named <code>off</code> in <code>E:\VnKey\</code> (File manager can) and the plugin leaves every app alone.</li>
+            <li><strong>Privacy:</strong> VnKey keeps its log on the phone, in <code>E:\VnKey\vnkey.log</code>, and sends nothing anywhere. Password fields are never logged.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="build" class="alt" aria-labelledby="build-title">
+  <div class="wrap build">
+    <div>
+      <p class="kicker">Build</p>
+      <h2 id="build-title">Build it yourself</h2>
+      <p>The build runs in a public Docker image with the S60 3rd Edition FP2 SDK, GnuPoc and GCCE, so a Mac, Linux or Windows (WSL) machine with Docker is all it takes.</p>
+      <p>GitHub Actions runs the same build on every push. The packages on the Releases page come from it, built from the tagged commit.</p>
+    </div>
+    <pre><code><span class="c"># the Telex engine's tests, with the host's compiler</span>
+<span class="p">$ </span>bash symbian/test/run.sh
+
+<span class="c"># the package: symbian/sis/vnkey.sisx</span>
+<span class="p">$ </span>bash symbian/group/docker-build.sh</code></pre>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="../vnkey.svg" alt="" width="24" height="24">VnKey</a>
+    <p>A hobby project by <a href="https://github.com/minhkhoi-dev">Khoi Nguyen</a>. Not affiliated with Nokia, HMD Global or the Unikey project. <a href="../m/en.html">Lite page for S60 phones</a>.</p>
+  </div>
+</footer>
+
+<script src="../app.js"></script>
+</body>
+</html>

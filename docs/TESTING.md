@@ -11,6 +11,41 @@ it lands in `logs/` of this repository (git-ignored) as `vnkey-<date>-<time>.log
 tell Claude which steps were done and what was seen on the screen. Options > Clear log
 empties it on the phone after it was sent.
 
+## Tests for the lite web page (site/m/)
+
+The introduction site has a light page for the phone's browser. Before it is on GitHub
+Pages it can be served from the Mac on the Wi-Fi; Opera Mini cannot reach the Mac's
+address (it loads pages through Opera's servers), so its test waits for GitHub Pages.
+
+### Test 1: The phone's browser gets the lite page
+
+Pre-condition:
+- On the Mac: `python3 -m http.server 8061 --directory site` in the repository.
+
+Steps:
+1. Web (the phone's browser): open `http://192.168.1.16:8061/`.
+2. Scroll to the end: English.
+3. Tiếng Việt, then Bản đầy đủ.
+
+Expected:
+- Step 1: the page that opens is the light one: a red bar with the icon and VnKey, a
+  yellow box `Tải VnKey (.sisx)` on the first screen, then Cài đặt, Gõ Telex, Tính
+  năng, Cần biết. Every Vietnamese letter shows (no boxes), arrows are `->`.
+- Step 2: the same page in English.
+- Step 3: the full page opens (it may be slow and look plain); no crash.
+
+### Test 2: Opera Mini and the download (after GitHub Pages is on)
+
+Steps:
+1. Opera Mini: open the site's address. Then the phone's browser: the same address.
+2. In the phone's browser: Tải VnKey.
+
+Expected:
+- Step 1: both get the light page.
+- Step 2: the link names the version (`Tải VnKey 0.1.11 (.sisx)`) and the phone offers
+  to install it. A certificate question may come first (the TLS patch asks about a
+  certificate it cannot check).
+
 ## Tests for app 0.1.11
 
 New: an app icon, and VnKey's screens in Vietnamese (the default) or English, set in the

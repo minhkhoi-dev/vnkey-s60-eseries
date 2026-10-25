@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="vi" lang="vi">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="HandheldFriendly" content="true" />
+<title>VnKey - Gõ tiếng Việt cho Nokia E72</title>
+<link rel="icon" type="image/png" href="icon.png" />
+<!-- The lite page for the phone's own browsers (S60 3rd Edition, Opera Mini): XHTML
+     Mobile Profile, no scripts, no web fonts, nothing loaded but icon.png. The Pages
+     workflow puts the latest release's .sisx next to it and fills in id="dl" and
+     the VERSION comment. Same text as en.html. -->
+<style type="text/css">
+body { margin: 0; padding: 0; background: #ffffff; color: #222222; font-family: sans-serif; }
+a { color: #b00e28; }
+.top { background: #c8102e; color: #ffffff; padding: 5px 6px; }
+.top img { float: left; margin: 0 6px 0 0; border: 0; }
+.top b { font-size: 1.25em; }
+.top span { display: block; margin-left: 38px; font-size: 0.85em; }
+.clr { clear: both; }
+.dl { margin: 6px; padding: 6px; background: #fff4df; border: 1px solid #f29f05; text-align: center; }
+.dl a { font-size: 1.15em; font-weight: bold; color: #c8102e; }
+.dl small { display: block; margin-top: 3px; color: #6b5a3a; }
+h2 { margin: 6px 0 0 0; padding: 3px 6px; background: #f3ebe2; color: #8a0a1e; font-size: 1em; border-top: 1px solid #e3d5c6; }
+.s { padding: 4px 6px; }
+ol, ul { margin: 0; padding: 0 0 0 18px; }
+li { margin: 2px 0; }
+table { border-collapse: collapse; }
+td { padding: 1px 8px 1px 0; }
+.k { font-family: monospace; color: #000000; background: #eeeeee; }
+.foot { margin-top: 8px; padding: 6px; background: #2a2420; color: #cfc6bd; font-size: 0.85em; }
+.foot a { color: #ffffff; }
+</style>
+</head>
+<body>
+
+<div class="top">
+<img src="icon.png" width="32" height="32" alt="" />
+<b>VnKey</b>
+<span>Gõ tiếng Việt Telex trong mọi ứng dụng trên Nokia E72</span>
+<div class="clr"></div>
+</div>
+
+<div class="dl">
+<a href="https://github.com/minhkhoi-dev/vnkey-s60-eseries/releases/latest" id="dl">Tải VnKey<!--VERSION--> (.sisx)</a>
+<small>Cần máy đã hack (vá InstallServer và Open4All).</small>
+</div>
+
+<h2>Cài đặt</h2>
+<div class="s">
+<ol>
+<li>Tải file .sisx ở trên và cài vào bộ nhớ máy (C:).</li>
+<li>Mở VnKey, chọn <b>Telex mọi ứng dụng</b>: <b>Bật</b>.</li>
+<li>Vào Tin nhắn, gõ <span class="k">Vieejt</span> và dấu cách: được <b>Việt</b>.</li>
+<li><b>Ctrl+Space</b> chuyển Việt / Anh. Dấu [V] hoặc [E] hiện ở thanh dưới.</li>
+</ol>
+</div>
+
+<h2>Gõ Telex</h2>
+<div class="s">
+<table>
+<tr><td class="k">aa</td><td>â</td><td class="k">s</td><td>á sắc</td></tr>
+<tr><td class="k">aw</td><td>ă</td><td class="k">f</td><td>à huyền</td></tr>
+<tr><td class="k">ee</td><td>ê</td><td class="k">r</td><td>ả hỏi</td></tr>
+<tr><td class="k">oo</td><td>ô</td><td class="k">x</td><td>ã ngã</td></tr>
+<tr><td class="k">ow</td><td>ơ</td><td class="k">j</td><td>ạ nặng</td></tr>
+<tr><td class="k">uw, w</td><td>ư</td><td class="k">z</td><td>xóa dấu</td></tr>
+<tr><td class="k">dd</td><td>đ</td><td></td><td></td></tr>
+</table>
+Dấu gõ ở cuối từ cũng được: <span class="k">toans</span> -> toán, <span class="k">nguoiwf</span> -> người. Gõ hai lần để bỏ: <span class="k">ass</span> -> as.
+</div>
+
+<h2>Tính năng</h2>
+<div class="s">
+<ul>
+<li>Gõ trong mọi ứng dụng: Tin nhắn, trình duyệt, chat.</li>
+<li>Từ tiếng Anh được giữ nguyên: tẽt -> text.</li>
+<li>Gõ tắt: ko -> không, dc -> được (sửa trong macros.txt).</li>
+<li>Bỏ dấu kiểu cũ (hòa) hoặc kiểu mới (hoà).</li>
+<li>Tự chạy khi bật máy. Màn hình tiếng Việt hoặc tiếng Anh.</li>
+</ul>
+</div>
+
+<h2>Cần biết</h2>
+<div class="s">
+<ul>
+<li><b>Tắt:</b> chọn Telex mọi ứng dụng: Tắt, trả lời Không, rồi khởi động lại máy.</li>
+<li><b>Cập nhật, gỡ cài đặt:</b> tắt như trên và khởi động lại máy trước.</li>
+<li><b>Tắt khẩn cấp:</b> tạo thư mục <span class="k">off</span> trong E:\VnKey\</li>
+<li><b>Riêng tư:</b> nhật ký chỉ lưu trên máy (E:\VnKey\vnkey.log), không gửi đi đâu.</li>
+<li><b>Không tải được?</b> Trình duyệt gốc của S60 chỉ có TLS 1.0, GitHub cần TLS 1.2. Cài bản vá TLS (<a href="https://nnproject.cc/tls/">nnproject.cc/tls</a>), hoặc tải file bằng máy tính rồi chép sang điện thoại.</li>
+</ul>
+</div>
+
+<div class="foot">
+<a href="en.html">English</a> | <a href="../?full">Bản đầy đủ</a> | <a href="https://github.com/minhkhoi-dev/vnkey-s60-eseries">GitHub</a><br />
+VnKey, dự án cá nhân của Khoi Nguyen.
+</div>
+
+</body>
+</html>
