@@ -33,6 +33,12 @@ HEADER
 TARGETPATH      /resource/apps
 END
 
+// The same resources with the English texts, for the Language setting: vnkey_en.rsc, with
+// the IDs of vnkey.rsg. (The icon, vnkey_aif.mif, is made by build.sh with mifconv.)
+START RESOURCE  vnkey_en.rss
+TARGETPATH      /resource/apps
+END
+
 START RESOURCE  vnkey_reg.rss
 TARGETPATH      /private/10003a3f/apps
 END

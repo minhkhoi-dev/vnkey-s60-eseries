@@ -3,7 +3,8 @@
 #include "VnSettingList.h"
 
 TVnSettingData::TVnSettingData()
-    : iVietnamese(ETrue), iAllApps(EFalse), iBoot(ETrue), iModernTone(EFalse), iWAlone(ETrue),
+    : iVietnamese(ETrue), iAllApps(EFalse), iBoot(ETrue), iLanguage(EVnLangVietnamese),
+      iModernTone(EFalse), iWAlone(ETrue),
       iSpellCheck(ETrue), iRestore(ETrue), iMacros(ETrue), iMethod(0), iPlace(0), iLogKeys(EFalse)
     {
     }
@@ -25,6 +26,8 @@ CAknSettingItem* CVnSettingList::CreateSettingItemL(TInt aId)
             return new (ELeave) CAknBinaryPopupSettingItem(aId, iData.iAllApps);
         case EVnSetBoot:
             return new (ELeave) CAknBinaryPopupSettingItem(aId, iData.iBoot);
+        case EVnSetLanguage:
+            return new (ELeave) CAknEnumeratedTextPopupSettingItem(aId, iData.iLanguage);
         case EVnSetTone:
             return new (ELeave) CAknBinaryPopupSettingItem(aId, iData.iModernTone);
         case EVnSetWAlone:
@@ -73,6 +76,20 @@ void CVnSettingList::EditCurrentL()
     if (current >= 0)
         {
         EditItemL(current, ETrue);
+        }
+    }
+
+TInt CVnSettingList::CurrentRow()
+    {
+    return ListBox() ? ListBox()->CurrentItemIndex() : -1;
+    }
+
+void CVnSettingList::SetCurrentRow(TInt aRow)
+    {
+    if (ListBox() && aRow >= 0 && aRow < SettingItemArray()->Count())
+        {
+        ListBox()->SetCurrentItemIndex(aRow);
+        ListBox()->ScrollToMakeItemVisible(aRow); // the rows are two lines: a few a screen
         }
     }
 

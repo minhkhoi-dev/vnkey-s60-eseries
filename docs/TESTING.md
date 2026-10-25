@@ -11,6 +11,86 @@ it lands in `logs/` of this repository (git-ignored) as `vnkey-<date>-<time>.log
 tell Claude which steps were done and what was seen on the screen. Options > Clear log
 empties it on the phone after it was sent.
 
+## Tests for app 0.1.11
+
+New: an app icon, and VnKey's screens in Vietnamese (the default) or English, set in the
+row Ngôn ngữ (Language). The log stays in English.
+
+### Test 1: Update, and the new icon
+
+Pre-condition:
+- `bash symbian/group/publish.sh` running on the Mac.
+- VnKey > Telex in all apps: Off, answer No, then restart the phone (the rules of test 5
+  below).
+
+Steps:
+1. Browser: open `http://192.168.1.16:8060/` > Install the newest version (0.1.11).
+2. Open the phone's menu where VnKey is.
+
+Expected:
+- Step 1: the install finishes with no error.
+- Step 2: VnKey's icon is a red rounded square with a white key on it, a red V on the key
+  and a small gold tone mark above the V. If the old icon is still there, restart the
+  phone (the menu keeps icons in a cache) and look again.
+
+### Test 2: Vietnamese by default
+
+Pre-condition:
+- Test 1 done.
+
+Steps:
+1. Open VnKey.
+2. Tùy chọn (left softkey): look at the menu, then close it.
+3. Telex mọi ứng dụng: Bật.
+
+Expected:
+- Step 1: the rows are in Vietnamese (Gõ tiếng Việt, Telex mọi ứng dụng, Chạy khi bật
+  máy, Ngôn ngữ (Language) with Tiếng Việt, Kiểu bỏ dấu, ...), with their values as
+  before the update. Softkeys `Tùy chọn` and `Thoát`. Every Vietnamese letter shows
+  (no boxes or wrong letters).
+- Step 2: the menu is in Vietnamese (Thay đổi, Gõ thử, Nạp lại gõ tắt, phím chuyển, Gửi
+  nhật ký, ...). While it is open the softkeys may be in the phone's language (they are
+  the phone's).
+- Step 3: a note `Telex mọi ứng dụng: bật.`; the title ends in `tất cả`.
+
+### Test 3: English, and back
+
+Pre-condition:
+- Test 2 done.
+
+Steps:
+1. Ngôn ngữ (Language) > English.
+2. Options: look at the menu. Options > Typing test, then Back.
+3. Options > Exit. Open VnKey again.
+4. Language (Ngôn ngữ) > Tiếng Việt.
+
+Expected:
+- Step 1: at once, every row is in English, the softkeys are `Options` and `Exit`, and
+  the Language row is still the selected one.
+- Step 2: the menu is in English; in the typing test the softkeys are `Options` and
+  `Back`.
+- Step 3: VnKey opens in English.
+- Step 4: at once, everything is in Vietnamese again.
+
+### Test 4: Notes, and Telex still works
+
+Pre-condition:
+- Test 3 done, VnKey in Vietnamese.
+
+Steps:
+1. Tùy chọn > Gửi nhật ký.
+2. OK.
+3. Messaging > New message: type `Vieejt` and a space.
+
+Expected:
+- Step 1: the question `Máy nhận nhật ký (địa chỉ:cổng)` with softkeys `OK` and `Hủy`.
+- Step 2: `Đang gửi nhật ký`, then `Đã gửi nhật ký: ...`.
+- Step 3: the text becomes `Việt `.
+
+The log has `settings: ... lang 1` while English is saved, and a line `language: en,
+error 0` (or `vi`) at each switch; an error there other than 0 means the texts did not
+change.
+
 ## Tests for app 0.1.9 / 0.1.10
 
 VnKey opens on a settings list. The selection key toggles an On/Off row or opens a list

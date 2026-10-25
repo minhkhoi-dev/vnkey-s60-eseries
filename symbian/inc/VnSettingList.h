@@ -13,6 +13,7 @@ public:
     TBool iVietnamese;
     TBool iAllApps;     // the saved preference; the title says whether it is on right now
     TBool iBoot;
+    TInt iLanguage;     // TVnLanguage
     TBool iModernTone;
     TBool iWAlone;
     TBool iSpellCheck;
@@ -43,6 +44,10 @@ public:
     void RefreshL();
     // Options > Change: the page of the focused row.
     void EditCurrentL();
+    // The focused row (-1 when none), and the focus put on a row (when the list is made
+    // again in another language).
+    TInt CurrentRow();
+    void SetCurrentRow(TInt aRow);
 
     // From CAknSettingItemList
     void EditItemL(TInt aIndex, TBool aCalledFromMenu);

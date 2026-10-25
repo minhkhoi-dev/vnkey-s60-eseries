@@ -3,7 +3,8 @@
 #include <aknquerydialog.h>
 #include <apgtask.h>
 #include <avkon.hrh>
-#include <avkon.rsg>
+#include <bautils.h>
+#include <eikapp.h>
 #include <eikbtgpc.h>
 #include <eikmenup.h>
 #include <eikspane.h>
@@ -19,27 +20,28 @@
 
 _LIT(KStartFmt, "VnKey %S start, log in %S");
 _LIT(KOptionsFmt, "options: vietnamese %d modern %d walone %d spell %d restore %d macros %d (%d) method %d logkeys %d");
-_LIT(KTitleFmt, "VnKey %S %S%S");
-_LIT(KTitleAll, " all");
+// What VnKey shows on its screens is in the resource file (vnkey_vi.loc, vnkey_en.loc); the
+// texts here are the log's, which stays in English.
+_LIT(KTitleFmt, "VnKey %S %S");
 _LIT(KModeV, "[V]");
 _LIT(KModeE, "[E]");
 _LIT(KMacrosFmt, "macros: %d from %S, line %d not taken");
 _LIT(KTriggersFmt, "triggers: %d from %S, line %d not taken");
-_LIT(KReloaded, "Reloaded macros and triggers");
 _LIT(KSharedNewFmt, "shared state: defined, flags %03x");
 _LIT(KSharedOldFmt, "shared state: taken, flags %03x");
 _LIT(KSharedErrFmt, "shared state: error %d, VnKey alone");
 _LIT(KSwitchFmt, "system FEP: installing %08x");
 _LIT(KSwitchErrFmt, "system FEP: error %d");
-_LIT(KAllOn, "Telex in all apps: on.");
-_LIT(KAllOff, "Telex in all apps: off.");
-_LIT(KAllErrFmt, "Not switched: error %d. See the log.");
-_LIT(KOffQuery, "Telex in all apps goes off when the phone restarts, the safe way. Also turn it off now? That may restart the phone.");
-_LIT(KOffLater, "Telex in all apps stays on until the phone restarts.");
-_LIT(KBootOn, "VnKey starts hidden when the phone starts, and turns Telex in all apps back on if it was on.");
-_LIT(KSkippedNote, "Telex in all apps was left off: the phone restarted while VnKey turned it on. Turn it on in the settings to try again.");
 _LIT(KFepErrFmt, "fep check %d: error %d");
 _LIT(KLoadedFepFmt, "fep: now %08x in VnKey");
+
+// The resource files of the two languages, on the drive VnKey is installed on. The
+// framework loads vnkey.rsc at the start; UseLanguageL swaps it for the other.
+_LIT(KResourceVi, "\\resource\\apps\\vnkey.rsc");
+_LIT(KResourceEn, "\\resource\\apps\\vnkey_en.rsc");
+_LIT(KLanguageFmt, "language: %S, error %d");
+_LIT(KLangViName, "vi");
+_LIT(KLangEnName, "en");
 
 // While VnKey turns Telex in all apps back on by itself, this file is next to the log. If
 // the phone restarts before it is removed again, the next start does not try again.
@@ -69,22 +71,21 @@ const TInt KMaxLogSent = 1024 * 1024; // the last megabyte of the log at most
 
 _LIT(KSendFmt, "send log: to %S, %d bytes");
 _LIT(KSentFmt, "send log: error %d, %S");
-_LIT(KSentOkFmt, "Log sent: %S");
-_LIT(KSentBadFmt, "Log not sent: error %d %S");
-_LIT(KSending, "Sending the log");
-_LIT(KBusy, "Still sending the log");
-_LIT(KLogCleared, "Log cleared");
+const TInt KMaxReplyShown = 100; // of the stub's reply, in the note
 _LIT(KSettingsFile, "settings.txt");
 // SaveSettings writes this first and then puts it in settings.txt's place, so that a
 // restart of the phone in the middle of a save cannot leave settings.txt half written (the
 // live off of 2026-10-17 15:36 restarted the phone and left it empty: every option off).
 _LIT(KSettingsTemp, "settings.tmp");
-_LIT(KSettingsLoaded, "settings: flags %d, place %d, system %d, boot %d, server %S");
+_LIT(KSettingsLoaded, "settings: flags %d, place %d, system %d, boot %d, lang %d, server %S");
 _LIT(KSettingsNoFlags, "settings: no flags in %S, the options keep their defaults");
 _LIT8(KFlagsKey, "flags");
 _LIT8(KPlaceKey, "place");
 _LIT8(KSystemKey, "system");
 _LIT8(KBootKey, "boot");      // vnkeyboot.exe reads it too: boot=0 is the only value it heeds
+_LIT8(KLangKey, "lang");      // vi (also when absent) or en
+_LIT8(KLangVi8, "vi");
+_LIT8(KLangEn8, "en");
 _LIT8(KServerKey, "logserver");
 
 void CVnKeyAppUi::ConstructL()
@@ -101,6 +102,8 @@ void CVnKeyAppUi::ConstructL()
     iGuardTimer = CPeriodic::NewL(CActive::EPriorityIdle);
     iNoteCallBack = new (ELeave) CAsyncCallBack(TCallBack(ShowSkippedNote, this),
                                                 CActive::EPriorityStandard);
+    iLanguageCallBack = new (ELeave) CAsyncCallBack(TCallBack(LanguageChanged, this),
+                                                    CActive::EPriorityStandard);
     iLogServer.Copy(KVnLogServer);
     iBootStart = ETrue;
     TRAPD(err, LoadMacrosL());
@@ -123,15 +126,20 @@ void CVnKeyAppUi::ConstructL()
         }
     ShareState();
 
+    // The texts in the saved language, before anything shows them: the framework loaded
+    // vnkey.rsc (Vietnamese) and made the softkeys from it.
+    if (iLanguage != iUiLanguage)
+        {
+        TRAP(err, UseLanguageL(iLanguage));
+        line.Format(KLanguageFmt, iUiLanguage == EVnLangEnglish ? &KLangEnName : &KLangViName, err);
+        iLog->Write(line);
+        ShowSoftkeysL();
+        }
+
     // The typing test, behind until Options > Typing test, and the settings list in front.
     iView = CVnKeyAppView::NewL(ClientRect());
     iView->MakeVisible(EFalse);
-    iSettings = new (ELeave) CVnSettingList(*this);
-    FillSettingData(); // the rows take their values when they are made
-    iSettings->SetMopParent(this);
-    iSettings->ConstructFromResourceL(R_VNKEY_SETTING_LIST);
-    iSettings->SetRect(ClientRect());
-    iSettings->ActivateL();
+    iSettings = NewSettingListL();
     AddToStackL(iSettings);
     iSettings->SetFocus(ETrue);
 
@@ -152,6 +160,7 @@ CVnKeyAppUi::~CVnKeyAppUi()
         }
     delete iGuardTimer;
     delete iNoteCallBack;
+    delete iLanguageCallBack;
     delete iSender;
     if (iSettings)
         {
@@ -221,8 +230,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             {
             TRAPD(rerr, LoadMacrosL());
             TRAP(rerr, LoadTriggersL());
-            CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote;
-            note->ExecuteLD(KReloaded);
+            NoteResL(ENoteConfirm, R_VNKEY_NOTE_RELOADED, EFalse);
             return;
             }
         case EVnCmdSendLog:
@@ -234,8 +242,7 @@ void CVnKeyAppUi::HandleCommandL(TInt aCommand)
             TBuf<40> line;
             line.Format(_L("VnKey %S log cleared"), &KVnVersion);
             iLog->Write(line);
-            CAknConfirmationNote* note = new (ELeave) CAknConfirmationNote;
-            note->ExecuteLD(KLogCleared);
+            NoteResL(ENoteConfirm, R_VNKEY_NOTE_LOG_CLEARED, EFalse);
             return;
             }
         default:
@@ -271,9 +278,18 @@ void CVnKeyAppUi::SettingChangedL(TInt aId)
             iLog->Write(iBootStart ? _L("settings: start at boot on") : _L("settings: start at boot off"));
             if (iBootStart)
                 {
-                CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
-                note->ExecuteLD(KBootOn);
+                NoteResL(ENoteInfo, R_VNKEY_NOTE_BOOT_ON, ETrue);
                 }
+            return;
+        case EVnSetLanguage:
+            if (d.iLanguage == iLanguage)
+                {
+                return;
+                }
+            iLanguage = d.iLanguage;
+            SaveSettings();
+            // Not here: the list is inside its EditItemL, and it is made again.
+            iLanguageCallBack->CallBack();
             return;
         case EVnSetTone:
             options.iModernTone = d.iModernTone;
@@ -336,8 +352,7 @@ void CVnKeyAppUi::SetAllAppsL(TBool aOn)
             {
             iFepDesired = ETrue; // never went off: it was to go at the next restart
             SaveSettings();
-            CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
-            note->ExecuteLD(KAllOn);
+            NoteResL(ENoteInfo, R_VNKEY_NOTE_ALL_ON, ETrue);
             }
         else
             {
@@ -351,16 +366,14 @@ void CVnKeyAppUi::SetAllAppsL(TBool aOn)
         iLog->Write(_L("settings: Telex in all apps off from the next start"));
         if (SystemFepIsVnKey())
             {
-            CAknQueryDialog* dlg = CAknQueryDialog::NewL();
-            dlg->SetPromptL(KOffQuery);
+            CAknQueryDialog* dlg = CAknQueryDialog::NewL(); // the question is in the resource
             if (dlg->ExecuteLD(R_VNKEY_OFF_QUERY))
                 {
                 SwitchSystemFepL(EFalse, ETrue);
                 }
             else
                 {
-                CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
-                note->ExecuteLD(KOffLater);
+                NoteResL(ENoteInfo, R_VNKEY_NOTE_OFF_LATER, ETrue);
                 }
             }
         }
@@ -386,12 +399,7 @@ void CVnKeyAppUi::ShowTypingL(TBool aTyping)
     AddToStackL(show);
     show->SetFocus(ETrue);
     iTyping = aTyping;
-    CEikButtonGroupContainer* cba = CEikButtonGroupContainer::Current();
-    if (cba)
-        {
-        cba->SetCommandSetL(aTyping ? R_AVKON_SOFTKEYS_OPTIONS_BACK : R_AVKON_SOFTKEYS_OPTIONS_EXIT);
-        cba->DrawDeferred();
-        }
+    ShowSoftkeysL();
     if (!aTyping)
         {
         RefreshSettingsL();
@@ -400,17 +408,40 @@ void CVnKeyAppUi::ShowTypingL(TBool aTyping)
     iLog->Write(aTyping ? _L("--- typing test") : _L("--- settings"));
     }
 
-void CVnKeyAppUi::FillSettingData()
+// Options and Exit on the settings list, Options and Back in the typing test, in the
+// language of the texts (VnKey's own softkeys, not Avkon's).
+void CVnKeyAppUi::ShowSoftkeysL()
     {
-    if (!iSettings)
+    CEikButtonGroupContainer* cba = CEikButtonGroupContainer::Current();
+    if (cba)
         {
-        return;
+        cba->SetCommandSetL(iTyping ? R_VNKEY_SOFTKEYS_OPTIONS_BACK : R_VNKEY_SOFTKEYS_OPTIONS_EXIT);
+        cba->DrawDeferred();
         }
-    TVnSettingData& d = iSettings->Data();
+    }
+
+// The settings list from the resource file loaded now, its rows with the state, not yet
+// on the control stack.
+CVnSettingList* CVnKeyAppUi::NewSettingListL()
+    {
+    CVnSettingList* list = new (ELeave) CVnSettingList(*this);
+    CleanupStack::PushL(list);
+    FillSettingData(list->Data()); // the rows take their values when they are made
+    list->SetMopParent(this);
+    list->ConstructFromResourceL(R_VNKEY_SETTING_LIST);
+    list->SetRect(ClientRect());
+    list->ActivateL();
+    CleanupStack::Pop(list);
+    return list;
+    }
+
+void CVnKeyAppUi::FillSettingData(TVnSettingData& d)
+    {
     const TVnOptions& o = iCatcher->Options();
     d.iVietnamese = iCatcher->Vietnamese();
     d.iAllApps = iFepDesired;
     d.iBoot = iBootStart;
+    d.iLanguage = iLanguage;
     d.iModernTone = o.iModernTone;
     d.iWAlone = o.iWAlone;
     d.iSpellCheck = o.iSpellCheck;
@@ -426,9 +457,109 @@ void CVnKeyAppUi::RefreshSettingsL()
     {
     if (iSettings)
         {
-        FillSettingData();
+        FillSettingData(iSettings->Data());
         iSettings->RefreshL();
         }
+    }
+
+// The Language row was changed (after the list's EditItemL has returned).
+TInt CVnKeyAppUi::LanguageChanged(TAny* aSelf)
+    {
+    CVnKeyAppUi* self = static_cast<CVnKeyAppUi*>(aSelf);
+    TRAPD(err, self->ApplyLanguageL());
+    TBuf<40> line;
+    line.Format(KLanguageFmt, self->iUiLanguage == EVnLangEnglish ? &KLangEnName : &KLangViName, err);
+    self->iLog->Write(line);
+    return 0;
+    }
+
+// The texts swapped, then the screens made again with them: the softkeys, the title, and
+// the settings list, on the same row. The menu reads its texts each time it opens.
+void CVnKeyAppUi::ApplyLanguageL()
+    {
+    UseLanguageL(iLanguage);
+    ShowSoftkeysL();
+    ShowModeL();
+    // the new list first, so that a failure leaves the old one there
+    CVnSettingList* list = NewSettingListL();
+    const TInt row = iSettings->CurrentRow();
+    if (!iTyping)
+        {
+        RemoveFromStack(iSettings);
+        }
+    delete iSettings;
+    iSettings = list;
+    iSettings->SetCurrentRow(row);
+    if (iTyping)
+        {
+        iSettings->MakeVisible(EFalse);
+        }
+    else
+        {
+        AddToStackL(iSettings);
+        iSettings->SetFocus(ETrue);
+        iSettings->DrawDeferred();
+        }
+    }
+
+// VnKey's resource file swapped for the one of aLanguage. Both are made from vnkey.rss with
+// the same NAME, so they have the same resource IDs and the same offset: the application
+// frees the one loaded now at the exit, as it would have the first.
+void CVnKeyAppUi::UseLanguageL(TInt aLanguage)
+    {
+    if (aLanguage == iUiLanguage)
+        {
+        return;
+        }
+    TFileName name;
+    ResourceFile(aLanguage, name);
+    if (!BaflUtils::FileExists(iCoeEnv->FsSession(), name))
+        {
+        User::Leave(KErrNotFound); // the texts stay as they are
+        }
+    TFileName old;
+    ResourceFile(iUiLanguage, old);
+    iCoeEnv->DeleteResourceFile(Application()->ResourceFileOffset());
+    TRAPD(err, iCoeEnv->AddResourceFileL(name));
+    if (err != KErrNone)
+        {
+        iCoeEnv->AddResourceFileL(old); // the texts of before
+        User::Leave(err);
+        }
+    iUiLanguage = aLanguage;
+    }
+
+void CVnKeyAppUi::ResourceFile(TInt aLanguage, TDes& aName) const
+    {
+    const TFileName exe(Application()->AppFullName());
+    TParsePtrC app(exe);
+    aName.Copy(app.Drive());
+    aName.Append(aLanguage == EVnLangEnglish ? KResourceEn() : KResourceVi());
+    }
+
+void CVnKeyAppUi::NoteL(TNoteKind aKind, const TDesC& aText, TBool aWaiting)
+    {
+    CAknResourceNoteDialog* note = NULL;
+    switch (aKind)
+        {
+        case ENoteConfirm:
+            note = new (ELeave) CAknConfirmationNote(aWaiting);
+            break;
+        case ENoteError:
+            note = new (ELeave) CAknErrorNote(aWaiting);
+            break;
+        default:
+            note = new (ELeave) CAknInformationNote(aWaiting);
+            break;
+        }
+    note->ExecuteLD(aText);
+    }
+
+void CVnKeyAppUi::NoteResL(TNoteKind aKind, TInt aResourceId, TBool aWaiting)
+    {
+    HBufC* text = iEikonEnv->AllocReadResourceLC(aResourceId);
+    NoteL(aKind, *text, aWaiting);
+    CleanupStack::PopAndDestroy(text);
     }
 
 void CVnKeyAppUi::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane* aMenuPane)
@@ -586,11 +717,7 @@ TInt CVnKeyAppUi::ShowSkippedNote(TAny* aSelf)
         return 0;
         }
     self->iRestoreSkipped = EFalse;
-    CAknInformationNote* note = new CAknInformationNote(ETrue);
-    if (note)
-        {
-        TRAP_IGNORE(note->ExecuteLD(KSkippedNote));
-        }
+    TRAP_IGNORE(self->NoteResL(ENoteInfo, R_VNKEY_NOTE_SKIPPED, ETrue));
     return 0;
     }
 
@@ -693,15 +820,15 @@ void CVnKeyAppUi::SwitchSystemFepL(TBool aOn, TBool aAnnounce)
         }
     if (err == KErrNone)
         {
-        CAknInformationNote* note = new (ELeave) CAknInformationNote(ETrue);
-        note->ExecuteLD(aOn ? KAllOn() : KAllOff());
+        NoteResL(ENoteInfo, aOn ? R_VNKEY_NOTE_ALL_ON : R_VNKEY_NOTE_ALL_OFF, ETrue);
         }
     else
         {
-        TBuf<60> text;
-        text.Format(KAllErrFmt, err);
-        CAknErrorNote* note = new (ELeave) CAknErrorNote(ETrue);
-        note->ExecuteLD(text);
+        HBufC* fmt = iEikonEnv->AllocReadResourceLC(R_VNKEY_NOTE_SWITCH_ERROR);
+        HBufC* text = HBufC::NewLC(fmt->Length() + 12);
+        text->Des().Format(*fmt, err);
+        NoteL(ENoteError, *text, ETrue);
+        CleanupStack::PopAndDestroy(2, fmt); // text, fmt
         }
     }
 
@@ -736,6 +863,7 @@ void CVnKeyAppUi::LoadSettingsL()
     TInt place = 0;
     TBool system = EFalse;
     TBool boot = iBootStart;
+    TInt language = EVnLangVietnamese;
     TBuf<60> server(iLogServer);
     TPtrC8 rest(rawPtr);
     while (rest.Length() > 0)
@@ -759,6 +887,7 @@ void CVnKeyAppUi::LoadSettingsL()
         else if (key == KPlaceKey) { lex.Val(place); }
         else if (key == KSystemKey) { TInt v = 0; lex.Val(v); system = v != 0; }
         else if (key == KBootKey) { TInt v = 1; lex.Val(v); boot = v != 0; }
+        else if (key == KLangKey) { language = val == KLangEn8 ? EVnLangEnglish : EVnLangVietnamese; }
         else if (key == KServerKey && val.Length() <= server.MaxLength()) { server.Copy(val); }
         }
     CleanupStack::PopAndDestroy(2, &file); // raw, file
@@ -787,10 +916,11 @@ void CVnKeyAppUi::LoadSettingsL()
     iIndicator->SetPlace(place);
     iFepDesired = system;
     iBootStart = boot;
+    iLanguage = language;
     iLogServer.Copy(server);
 
     TBuf<200> line;
-    line.Format(KSettingsLoaded, flags, place, system, boot, &iLogServer);
+    line.Format(KSettingsLoaded, flags, place, system, boot, language, &iLogServer);
     iLog->Write(line);
     }
 
@@ -816,6 +946,7 @@ void CVnKeyAppUi::SaveSettings()
     out.AppendFormat(_L8("place=%d\r\n"), iIndicator->Place());
     out.AppendFormat(_L8("system=%d\r\n"), iFepDesired ? 1 : 0);
     out.AppendFormat(_L8("boot=%d\r\n"), iBootStart ? 1 : 0);
+    out.AppendFormat(_L8("lang=%S\r\n"), iLanguage == EVnLangEnglish ? &KLangEn8 : &KLangVi8);
     TBuf8<64> server;
     server.Copy(iLogServer.Left(server.MaxLength()));
     out.AppendFormat(_L8("logserver=%S\r\n"), &server);
@@ -831,7 +962,8 @@ void CVnKeyAppUi::SaveSettings()
         }
     }
 
-// The indicator and the title: "VnKey [V] m1", and "all" while Telex in all apps is on.
+// The indicator and the title: "VnKey [V] m1", and "all" ("tất cả") while Telex in all
+// apps is on.
 void CVnKeyAppUi::ShowModeL()
     {
     const TBool on = iCatcher->Vietnamese();
@@ -839,7 +971,13 @@ void CVnKeyAppUi::ShowModeL()
     TBuf<8> method;
     method.Format(_L("m%d"), iCatcher->Method() + 1);
     TBuf<40> title;
-    title.Format(KTitleFmt, on ? &KModeV : &KModeE, &method, SystemFepIsVnKey() ? &KTitleAll : &KNullDesC);
+    title.Format(KTitleFmt, on ? &KModeV : &KModeE, &method);
+    if (SystemFepIsVnKey())
+        {
+        HBufC* all = iEikonEnv->AllocReadResourceLC(R_VNKEY_TITLE_ALL);
+        title.Append(all->Left(title.MaxLength() - title.Length()));
+        CleanupStack::PopAndDestroy(all);
+        }
     CAknTitlePane* pane = static_cast<CAknTitlePane*>(StatusPane()->ControlL(TUid::Uid(EEikStatusPaneUidTitle)));
     pane->SetTextL(title);
     }
@@ -921,8 +1059,7 @@ void CVnKeyAppUi::SendLogL()
     {
     if (iSender->IsSending())
         {
-        CAknInformationNote* note = new (ELeave) CAknInformationNote;
-        note->ExecuteLD(KBusy);
+        NoteResL(ENoteInfo, R_VNKEY_NOTE_BUSY, EFalse);
         return;
         }
     TBuf<60> server(iLogServer);
@@ -947,34 +1084,35 @@ void CVnKeyAppUi::SendLogL()
         LogSent(err, KNullDesC);
         return;
         }
-    CAknInformationNote* note = new (ELeave) CAknInformationNote;
-    note->ExecuteLD(KSending);
+    NoteResL(ENoteInfo, R_VNKEY_NOTE_SENDING, EFalse);
     }
 
 void CVnKeyAppUi::LogSent(TInt aError, const TDesC& aReply)
     {
     TBuf<200> line;
-    line.Format(KSentFmt, aError, &aReply);
+    const TPtrC logged(aReply.Left(line.MaxLength() - 40));
+    line.Format(KSentFmt, aError, &logged);
     iLog->Write(line);
-    TBuf<160> text;
+    TRAP_IGNORE(SentNoteL(aError, aReply));
+    }
+
+// "Log sent: <the stub's reply>", or "Log not sent: error <n> <reply>".
+void CVnKeyAppUi::SentNoteL(TInt aError, const TDesC& aReply)
+    {
+    const TPtrC reply(aReply.Left(KMaxReplyShown));
+    HBufC* fmt = iEikonEnv->AllocReadResourceLC(aError == KErrNone ? R_VNKEY_NOTE_SENT
+                                                                     : R_VNKEY_NOTE_NOT_SENT);
+    HBufC* text = HBufC::NewLC(fmt->Length() + reply.Length() + 12);
     if (aError == KErrNone)
         {
-        text.Format(KSentOkFmt, &aReply);
-        CAknConfirmationNote* note = new CAknConfirmationNote;
-        if (note)
-            {
-            TRAP_IGNORE(note->ExecuteLD(text));
-            }
+        text->Des().Format(*fmt, &reply);
         }
     else
         {
-        text.Format(KSentBadFmt, aError, &aReply);
-        CAknErrorNote* note = new CAknErrorNote;
-        if (note)
-            {
-            TRAP_IGNORE(note->ExecuteLD(text));
-            }
+        text->Des().Format(*fmt, aError, &reply);
         }
+    NoteL(aError == KErrNone ? ENoteConfirm : ENoteError, *text, EFalse);
+    CleanupStack::PopAndDestroy(2, fmt); // text, fmt
     }
 
 void CVnKeyAppUi::RunFepCheck(TInt aCommand)

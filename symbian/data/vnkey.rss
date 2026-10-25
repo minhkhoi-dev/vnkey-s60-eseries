@@ -1,5 +1,13 @@
-// vnkey.rss - VnKey's resources: the settings list (the main screen), the menu, the queries
+// vnkey.rss - VnKey's resources: the settings list (the main screen), the menu, the
+// softkeys, the queries and the notes.
+//
+// Built twice (CLAUDE.md "Design", the language): as vnkey.rsc with the Vietnamese texts of
+// vnkey_vi.loc, the default, and from vnkey_en.rss, which defines VNKEY_LANG_EN and
+// includes this file, as vnkey_en.rsc with those of vnkey_en.loc. The two have the same
+// NAME and the same resources in the same order, so the same IDs (vnkey.rsg), and VnKey
+// swaps one for the other while it runs. Every text is a qtn_ name from the .loc files.
 NAME VNKY
+CHARACTER_SET UTF8
 
 #include <eikon.rh>
 #include <avkon.rh>
@@ -7,6 +15,13 @@ NAME VNKY
 #include <appinfo.rh>
 #include "VnKey.hrh"
 
+#ifdef VNKEY_LANG_EN
+#include "vnkey_en.loc"
+#else
+#include "vnkey_vi.loc"
+#endif
+
+// The first three stay first: the framework reads EIK_APP_INFO as the third resource.
 RESOURCE RSS_SIGNATURE { }
 
 RESOURCE TBUF r_default_document_name { buf = ""; }
@@ -14,7 +29,54 @@ RESOURCE TBUF r_default_document_name { buf = ""; }
 RESOURCE EIK_APP_INFO
     {
     menubar = r_vnkey_menubar;
-    cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+    cba = r_vnkey_softkeys_options_exit;
+    }
+
+// VnKey's own softkeys, in the language of the texts (Avkon's would be in the phone's).
+// The command IDs are Avkon's, so they act as Avkon's softkeys do.
+RESOURCE CBA r_vnkey_softkeys_options_exit
+    {
+    buttons =
+        {
+        CBA_BUTTON { id = EAknSoftkeyOptions; txt = qtn_vnkey_sk_options; },
+        CBA_BUTTON { id = EAknSoftkeyExit;    txt = qtn_vnkey_sk_exit; }
+        };
+    }
+
+RESOURCE CBA r_vnkey_softkeys_options_back
+    {
+    buttons =
+        {
+        CBA_BUTTON { id = EAknSoftkeyOptions; txt = qtn_vnkey_sk_options; },
+        CBA_BUTTON { id = EAknSoftkeyBack;    txt = qtn_vnkey_sk_back; }
+        };
+    }
+
+RESOURCE CBA r_vnkey_softkeys_ok_cancel
+    {
+    buttons =
+        {
+        CBA_BUTTON { id = EAknSoftkeyOk;     txt = qtn_vnkey_sk_ok; },
+        CBA_BUTTON { id = EAknSoftkeyCancel; txt = qtn_vnkey_sk_cancel; }
+        };
+    }
+
+RESOURCE CBA r_vnkey_softkeys_cancel
+    {
+    buttons =
+        {
+        CBA_BUTTON { id = EAknSoftkeyEmpty;  txt = ""; },
+        CBA_BUTTON { id = EAknSoftkeyCancel; txt = qtn_vnkey_sk_cancel; }
+        };
+    }
+
+RESOURCE CBA r_vnkey_softkeys_yes_no
+    {
+    buttons =
+        {
+        CBA_BUTTON { id = EAknSoftkeyYes; txt = qtn_vnkey_sk_yes; },
+        CBA_BUTTON { id = EAknSoftkeyNo;  txt = qtn_vnkey_sk_no; }
+        };
     }
 
 RESOURCE MENU_BAR r_vnkey_menubar
@@ -29,15 +91,15 @@ RESOURCE MENU_PANE r_vnkey_menu
     {
     items =
         {
-        MENU_ITEM { command = EVnCmdChange;     txt = "Change"; },
-        MENU_ITEM { command = EVnCmdTyping;     txt = "Typing test"; },
-        MENU_ITEM { command = EVnCmdClear;      txt = "Clear text"; },
-        MENU_ITEM { command = EVnCmdSettings;   txt = "Settings"; },
-        MENU_ITEM { command = EVnCmdReload;     txt = "Reload macros/triggers"; },
-        MENU_ITEM { command = EVnCmdSendLog;    txt = "Send log"; },
-        MENU_ITEM { command = EVnCmdClearLog;   txt = "Clear log"; },
-        MENU_ITEM { cascade = r_vnkey_fep_menu; txt = "FEP checks"; },
-        MENU_ITEM { command = EAknSoftkeyExit;  txt = "Exit"; }
+        MENU_ITEM { command = EVnCmdChange;     txt = qtn_vnkey_menu_change; },
+        MENU_ITEM { command = EVnCmdTyping;     txt = qtn_vnkey_menu_typing; },
+        MENU_ITEM { command = EVnCmdClear;      txt = qtn_vnkey_menu_clear; },
+        MENU_ITEM { command = EVnCmdSettings;   txt = qtn_vnkey_menu_settings; },
+        MENU_ITEM { command = EVnCmdReload;     txt = qtn_vnkey_menu_reload; },
+        MENU_ITEM { command = EVnCmdSendLog;    txt = qtn_vnkey_menu_send_log; },
+        MENU_ITEM { command = EVnCmdClearLog;   txt = qtn_vnkey_menu_clear_log; },
+        MENU_ITEM { cascade = r_vnkey_fep_menu; txt = qtn_vnkey_menu_fep; },
+        MENU_ITEM { command = EAknSoftkeyExit;  txt = qtn_vnkey_menu_exit; }
         };
     }
 
@@ -45,15 +107,13 @@ RESOURCE MENU_PANE r_vnkey_fep_menu
     {
     items =
         {
-        MENU_ITEM { command = EVnCmdFepList;   txt = "1: list"; },
-        MENU_ITEM { command = EVnCmdFepLoad;   txt = "2: load plugin"; },
-        MENU_ITEM { command = EVnCmdFepCreate; txt = "3: second FEP"; }
+        MENU_ITEM { command = EVnCmdFepList;   txt = qtn_vnkey_menu_fep_list; },
+        MENU_ITEM { command = EVnCmdFepLoad;   txt = qtn_vnkey_menu_fep_load; },
+        MENU_ITEM { command = EVnCmdFepCreate; txt = qtn_vnkey_menu_fep_create; }
         };
     }
 
-// The settings list (CVnSettingList), the rows in the order of TVnSettingId. A letter
-// outside ASCII is written as its code outside the quotes ("w"<0x01b0> is w and u+horn):
-// the resource compiler's character set is not to be trusted with them in the text.
+// The settings list (CVnSettingList), the rows in the order of TVnSettingId.
 RESOURCE AVKON_SETTING_ITEM_LIST r_vnkey_setting_list
     {
     title = "VnKey";
@@ -62,86 +122,93 @@ RESOURCE AVKON_SETTING_ITEM_LIST r_vnkey_setting_list
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetVietnamese;
-            name = "Vietnamese typing";
+            name = qtn_vnkey_set_vietnamese;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetAllApps;
-            name = "Telex in all apps";
+            name = qtn_vnkey_set_all_apps;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetBoot;
-            name = "Start at boot";
+            name = qtn_vnkey_set_boot;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
+            identifier = EVnSetLanguage;
+            name = qtn_vnkey_set_language;
+            setting_page_resource = r_vnkey_popup_page;
+            associated_resource = r_vnkey_language_texts;
+            },
+        AVKON_SETTING_ITEM
+            {
             identifier = EVnSetTone;
-            name = "Tone placement";
+            name = qtn_vnkey_set_tone;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_tone_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetWAlone;
-            name = "w alone types "<0x01b0>;
+            name = qtn_vnkey_set_w_alone;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetSpell;
-            name = "Spell check";
+            name = qtn_vnkey_set_spell;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetRestore;
-            name = "Restore English words";
+            name = qtn_vnkey_set_restore;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetMacros;
-            name = "Shortcuts (g"<0x00f5>" t"<0x1eaf>"t)";
+            name = qtn_vnkey_set_macros;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetMethod;
-            name = "Rewrite method";
+            name = qtn_vnkey_set_method;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_method_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetPlace;
-            name = "[V]/[E] mark place";
+            name = qtn_vnkey_set_place;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_place_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetLogKeys;
-            name = "Log every key";
+            name = qtn_vnkey_set_log_keys;
             setting_page_resource = r_vnkey_popup_page;
             associated_resource = r_vnkey_onoff_texts;
             },
         AVKON_SETTING_ITEM
             {
             identifier = EVnSetServer;
-            name = "Log server";
+            name = qtn_vnkey_set_server;
             setting_page_resource = r_vnkey_text_page;
-            empty_item_text = "none";
+            empty_item_text = qtn_vnkey_set_none;
             }
         };
     }
@@ -150,6 +217,7 @@ RESOURCE AVKON_SETTING_ITEM_LIST r_vnkey_setting_list
 RESOURCE AVKON_SETTING_PAGE r_vnkey_popup_page
     {
     label = "";
+    softkey_resource = r_vnkey_softkeys_ok_cancel;
     type = EAknCtPopupSettingList;
     editor_resource_id = r_vnkey_popup_list;
     }
@@ -163,6 +231,8 @@ RESOURCE POPUP_SETTING_LIST r_vnkey_popup_list
 RESOURCE AVKON_SETTING_PAGE r_vnkey_text_page
     {
     label = "";
+    softkey_resource = r_vnkey_softkeys_ok_cancel;
+    invalid_contents_softkey_resource = r_vnkey_softkeys_cancel;
     type = EEikCtEdwin;
     editor_resource_id = r_vnkey_server_edwin;
     }
@@ -188,8 +258,8 @@ RESOURCE ARRAY r_vnkey_onoff_values
     {
     items =
         {
-        AVKON_ENUMERATED_TEXT { value = 1; text = "On"; },
-        AVKON_ENUMERATED_TEXT { value = 0; text = "Off"; }
+        AVKON_ENUMERATED_TEXT { value = 1; text = qtn_vnkey_on; },
+        AVKON_ENUMERATED_TEXT { value = 0; text = qtn_vnkey_off; }
         };
     }
 
@@ -197,8 +267,33 @@ RESOURCE ARRAY r_vnkey_onoff_popped
     {
     items =
         {
-        LBUF { txt = "On"; },
-        LBUF { txt = "Off"; }
+        LBUF { txt = qtn_vnkey_on; },
+        LBUF { txt = qtn_vnkey_off; }
+        };
+    }
+
+// The language of VnKey's screens (TVnLanguage).
+RESOURCE AVKON_POPUP_SETTING_TEXTS r_vnkey_language_texts
+    {
+    setting_texts_resource = r_vnkey_language_values;
+    popped_up_texts_resource = r_vnkey_language_popped;
+    }
+
+RESOURCE ARRAY r_vnkey_language_values
+    {
+    items =
+        {
+        AVKON_ENUMERATED_TEXT { value = EVnLangVietnamese; text = qtn_vnkey_lang_vietnamese; },
+        AVKON_ENUMERATED_TEXT { value = EVnLangEnglish;    text = qtn_vnkey_lang_english; }
+        };
+    }
+
+RESOURCE ARRAY r_vnkey_language_popped
+    {
+    items =
+        {
+        LBUF { txt = qtn_vnkey_lang_vietnamese; },
+        LBUF { txt = qtn_vnkey_lang_english; }
         };
     }
 
@@ -213,8 +308,8 @@ RESOURCE ARRAY r_vnkey_tone_values
     {
     items =
         {
-        AVKON_ENUMERATED_TEXT { value = 1; text = "Modern: ho"<0x00e0>", thu"<0x00fd>; },
-        AVKON_ENUMERATED_TEXT { value = 0; text = "Traditional: h"<0x00f2>"a, th"<0x00fa>"y"; }
+        AVKON_ENUMERATED_TEXT { value = 1; text = qtn_vnkey_tone_modern; },
+        AVKON_ENUMERATED_TEXT { value = 0; text = qtn_vnkey_tone_old; }
         };
     }
 
@@ -222,8 +317,8 @@ RESOURCE ARRAY r_vnkey_tone_popped
     {
     items =
         {
-        LBUF { txt = "Modern: ho"<0x00e0>", thu"<0x00fd>; },
-        LBUF { txt = "Traditional: h"<0x00f2>"a, th"<0x00fa>"y"; }
+        LBUF { txt = qtn_vnkey_tone_modern; },
+        LBUF { txt = qtn_vnkey_tone_old; }
         };
     }
 
@@ -238,9 +333,9 @@ RESOURCE ARRAY r_vnkey_method_values
     {
     items =
         {
-        AVKON_ENUMERATED_TEXT { value = 0; text = "1: inline"; },
-        AVKON_ENUMERATED_TEXT { value = 1; text = "2: delete, inline"; },
-        AVKON_ENUMERATED_TEXT { value = 2; text = "3: keys (default)"; }
+        AVKON_ENUMERATED_TEXT { value = 0; text = qtn_vnkey_method_1; },
+        AVKON_ENUMERATED_TEXT { value = 1; text = qtn_vnkey_method_2; },
+        AVKON_ENUMERATED_TEXT { value = 2; text = qtn_vnkey_method_3; }
         };
     }
 
@@ -248,9 +343,9 @@ RESOURCE ARRAY r_vnkey_method_popped
     {
     items =
         {
-        LBUF { txt = "1: inline"; },
-        LBUF { txt = "2: delete, inline"; },
-        LBUF { txt = "3: keys (default)"; }
+        LBUF { txt = qtn_vnkey_method_1; },
+        LBUF { txt = qtn_vnkey_method_2; },
+        LBUF { txt = qtn_vnkey_method_3; }
         };
     }
 
@@ -265,10 +360,10 @@ RESOURCE ARRAY r_vnkey_place_values
     {
     items =
         {
-        AVKON_ENUMERATED_TEXT { value = 0; text = "1: bottom bar icons"; },
-        AVKON_ENUMERATED_TEXT { value = 1; text = "2: left of battery"; },
-        AVKON_ENUMERATED_TEXT { value = 2; text = "3: navi pane"; },
-        AVKON_ENUMERATED_TEXT { value = 3; text = "4: title pane"; }
+        AVKON_ENUMERATED_TEXT { value = 0; text = qtn_vnkey_place_1; },
+        AVKON_ENUMERATED_TEXT { value = 1; text = qtn_vnkey_place_2; },
+        AVKON_ENUMERATED_TEXT { value = 2; text = qtn_vnkey_place_3; },
+        AVKON_ENUMERATED_TEXT { value = 3; text = qtn_vnkey_place_4; }
         };
     }
 
@@ -276,10 +371,10 @@ RESOURCE ARRAY r_vnkey_place_popped
     {
     items =
         {
-        LBUF { txt = "1: bottom bar icons"; },
-        LBUF { txt = "2: left of battery"; },
-        LBUF { txt = "3: navi pane"; },
-        LBUF { txt = "4: title pane"; }
+        LBUF { txt = qtn_vnkey_place_1; },
+        LBUF { txt = qtn_vnkey_place_2; },
+        LBUF { txt = qtn_vnkey_place_3; },
+        LBUF { txt = qtn_vnkey_place_4; }
         };
     }
 
@@ -287,14 +382,18 @@ RESOURCE ARRAY r_vnkey_place_popped
 RESOURCE DIALOG r_vnkey_off_query
     {
     flags = EGeneralQueryFlags;
-    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    buttons = r_vnkey_softkeys_yes_no;
     items =
         {
         DLG_LINE
             {
             type = EAknCtQuery;
             id = EGeneralQuery;
-            control = AVKON_CONFIRMATION_QUERY { layout = EConfirmationQueryLayout; };
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout = EConfirmationQueryLayout;
+                label = qtn_vnkey_off_query;
+                };
             }
         };
     }
@@ -303,7 +402,7 @@ RESOURCE DIALOG r_vnkey_off_query
 RESOURCE DIALOG r_vnkey_server_query
     {
     flags = EGeneralQueryFlags;
-    buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+    buttons = r_vnkey_softkeys_ok_cancel;
     items =
         {
         DLG_LINE
@@ -313,7 +412,7 @@ RESOURCE DIALOG r_vnkey_server_query
             control = AVKON_DATA_QUERY
                 {
                 layout = EDataLayout;
-                label = "Log server (address:port)";
+                label = qtn_vnkey_server_query;
                 control = EDWIN
                     {
                     flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
@@ -326,12 +425,30 @@ RESOURCE DIALOG r_vnkey_server_query
         };
     }
 
+// The texts of the notes (CVnKeyAppUi); %d and %S are filled in there.
+RESOURCE TBUF r_vnkey_note_reloaded     { buf = qtn_vnkey_note_reloaded; }
+RESOURCE TBUF r_vnkey_note_all_on       { buf = qtn_vnkey_note_all_on; }
+RESOURCE TBUF r_vnkey_note_all_off      { buf = qtn_vnkey_note_all_off; }
+RESOURCE TBUF r_vnkey_note_switch_error { buf = qtn_vnkey_note_switch_error; }
+RESOURCE TBUF r_vnkey_note_off_later    { buf = qtn_vnkey_note_off_later; }
+RESOURCE TBUF r_vnkey_note_boot_on      { buf = qtn_vnkey_note_boot_on; }
+RESOURCE TBUF r_vnkey_note_skipped      { buf = qtn_vnkey_note_skipped; }
+RESOURCE TBUF r_vnkey_note_sending      { buf = qtn_vnkey_note_sending; }
+RESOURCE TBUF r_vnkey_note_busy         { buf = qtn_vnkey_note_busy; }
+RESOURCE TBUF r_vnkey_note_sent         { buf = qtn_vnkey_note_sent; }
+RESOURCE TBUF r_vnkey_note_not_sent     { buf = qtn_vnkey_note_not_sent; }
+RESOURCE TBUF r_vnkey_note_log_cleared  { buf = qtn_vnkey_note_log_cleared; }
+RESOURCE TBUF r_vnkey_title_all         { buf = qtn_vnkey_title_all; }
+
+// The caption and the icon in the phone's menu: gfx/vnkey.svg, made into vnkey_aif.mif by
+// group/build.sh.
 RESOURCE LOCALISABLE_APP_INFO r_vnkey_localisable_app_info
     {
     short_caption = "VnKey";
     caption_and_icon = CAPTION_AND_ICON_INFO
         {
         caption = "VnKey";
-        number_of_icons = 0;
+        number_of_icons = 1;
+        icon_file = "\\resource\\apps\\vnkey_aif.mif";
         };
     }

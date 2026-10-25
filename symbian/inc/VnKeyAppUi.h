@@ -18,7 +18,8 @@ class CPeriodic;
 // application (TVnShared), switches the system's FEP to the plugin and back (Telex in all
 // apps), and keeps the settings in settings.txt. Started at boot by vnkeyboot.exe with the
 // background command, it stays behind the other applications and turns Telex in all apps
-// back on when it was on (roadmap 4).
+// back on when it was on (roadmap 4). Its screens are in Vietnamese or English (the
+// Language row): the texts are in vnkey.rsc or vnkey_en.rsc, swapped while it runs.
 class CVnKeyAppUi : public CAknAppUi, public MVnCatcherObserver, public MVnLogSenderObserver,
                     public MCoeObserverOfLoadedFep, public MVnSettingObserver,
                     public MVnIndicatorObserver
@@ -49,8 +50,20 @@ private:
     void IndicatorLog(const TDesC& aLine);
 
     void ShowTypingL(TBool aTyping);    // the typing test in front, or the settings list
-    void FillSettingData();             // the state into the list's data
+    void ShowSoftkeysL();               // the softkeys of the screen in front
+    CVnSettingList* NewSettingListL();  // the settings list, made from the resource file
+    void FillSettingData(TVnSettingData& aData);   // the state into the list's data
     void RefreshSettingsL();            // and shown
+    // The language of the screens (CLAUDE.md "Design"): VnKey's resource file swapped for
+    // the one of aLanguage (TVnLanguage); ApplyLanguageL also makes the screens again.
+    void UseLanguageL(TInt aLanguage);
+    void ApplyLanguageL();
+    void ResourceFile(TInt aLanguage, TDes& aName) const;
+    static TInt LanguageChanged(TAny* aSelf);
+    // Notes with a text, or with the text of a resource (in the language of the screens).
+    enum TNoteKind { ENoteInfo, ENoteConfirm, ENoteError };
+    void NoteL(TNoteKind aKind, const TDesC& aText, TBool aWaiting);
+    void NoteResL(TNoteKind aKind, TInt aResourceId, TBool aWaiting);
     void SetAllAppsL(TBool aOn);        // the Telex in all apps row was changed
     void ShowModeL();
     void ShareState();
@@ -77,6 +90,7 @@ private:
     void LogIndicator();
     void RunFepCheck(TInt aCommand);
     void SendLogL();
+    void SentNoteL(TInt aError, const TDesC& aReply);
 
 private:
     CVnLog* iLog;
@@ -94,6 +108,10 @@ private:
     TBool iRestoreSkipped;  // the guard stopped the restore: a note when VnKey is in front
     CPeriodic* iGuardTimer; // removes the guard file a while after a restore
     CAsyncCallBack* iNoteCallBack;
+    TInt iLanguage;         // the saved preference (TVnLanguage), Vietnamese by default
+    TInt iUiLanguage;       // the language of the resource file loaded now
+    // the Language row was changed: the screens are made again after the list's EditItemL
+    CAsyncCallBack* iLanguageCallBack;
     };
 
 #endif // VNKEYAPPUI_H

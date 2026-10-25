@@ -1,0 +1,5 @@
+// vnkey_en.rss - VnKey's resources with the English texts (vnkey_en.rsc, the Language
+// setting): vnkey.rss with vnkey_en.loc in place of vnkey_vi.loc. Same NAME, same IDs
+// (vnkey.rsg, made from vnkey.rss).
+#define VNKEY_LANG_EN
+#include "vnkey.rss"

@@ -1,0 +1,79 @@
+// vnkey_en.loc - the texts of VnKey's screens in English (vnkey_en.rsc, the Language
+// setting). UTF-8: vnkey.rss says CHARACTER_SET UTF8. Every text here is also in
+// vnkey_vi.loc, under the same name and with the same %d / %S in the same order.
+
+// Softkeys
+#define qtn_vnkey_sk_options        "Options"
+#define qtn_vnkey_sk_exit           "Exit"
+#define qtn_vnkey_sk_back           "Back"
+#define qtn_vnkey_sk_ok             "OK"
+#define qtn_vnkey_sk_cancel         "Cancel"
+#define qtn_vnkey_sk_yes            "Yes"
+#define qtn_vnkey_sk_no             "No"
+
+// The Options menu
+#define qtn_vnkey_menu_change       "Change"
+#define qtn_vnkey_menu_typing       "Typing test"
+#define qtn_vnkey_menu_clear        "Clear text"
+#define qtn_vnkey_menu_settings     "Settings"
+#define qtn_vnkey_menu_reload       "Reload macros/triggers"
+#define qtn_vnkey_menu_send_log     "Send log"
+#define qtn_vnkey_menu_clear_log    "Clear log"
+#define qtn_vnkey_menu_fep          "FEP checks"
+#define qtn_vnkey_menu_fep_list     "1: list"
+#define qtn_vnkey_menu_fep_load     "2: load plugin"
+#define qtn_vnkey_menu_fep_create   "3: second FEP"
+#define qtn_vnkey_menu_exit         "Exit"
+
+// The rows of the settings list
+#define qtn_vnkey_set_vietnamese    "Vietnamese typing"
+#define qtn_vnkey_set_all_apps      "Telex in all apps"
+#define qtn_vnkey_set_boot          "Start at boot"
+#define qtn_vnkey_set_language      "Language (Ngôn ngữ)"
+#define qtn_vnkey_set_tone          "Tone placement"
+#define qtn_vnkey_set_w_alone       "w alone types ư"
+#define qtn_vnkey_set_spell         "Spell check"
+#define qtn_vnkey_set_restore       "Restore English words"
+#define qtn_vnkey_set_macros        "Shortcuts (gõ tắt)"
+#define qtn_vnkey_set_method        "Rewrite method"
+#define qtn_vnkey_set_place         "[V]/[E] mark place"
+#define qtn_vnkey_set_log_keys      "Log every key"
+#define qtn_vnkey_set_server        "Log server"
+#define qtn_vnkey_set_none          "none"
+
+// The values of the rows
+#define qtn_vnkey_on                "On"
+#define qtn_vnkey_off               "Off"
+#define qtn_vnkey_tone_modern       "Modern: hoà, thuý"
+#define qtn_vnkey_tone_old          "Traditional: hòa, thúy"
+#define qtn_vnkey_method_1          "1: inline"
+#define qtn_vnkey_method_2          "2: delete, inline"
+#define qtn_vnkey_method_3          "3: keys (default)"
+#define qtn_vnkey_place_1           "1: bottom bar icons"
+#define qtn_vnkey_place_2           "2: left of battery"
+#define qtn_vnkey_place_3           "3: navi pane"
+#define qtn_vnkey_place_4           "4: title pane"
+// Each language is named in itself, in both files.
+#define qtn_vnkey_lang_vietnamese   "Tiếng Việt"
+#define qtn_vnkey_lang_english      "English"
+
+// Queries
+#define qtn_vnkey_off_query         "Telex in all apps goes off when the phone restarts, the safe way. Also turn it off now? That may restart the phone."
+#define qtn_vnkey_server_query      "Log server (address:port)"
+
+// Notes
+#define qtn_vnkey_note_reloaded     "Reloaded macros and triggers"
+#define qtn_vnkey_note_all_on       "Telex in all apps: on."
+#define qtn_vnkey_note_all_off      "Telex in all apps: off."
+#define qtn_vnkey_note_switch_error "Not switched: error %d. See the log."
+#define qtn_vnkey_note_off_later    "Telex in all apps stays on until the phone restarts."
+#define qtn_vnkey_note_boot_on      "VnKey starts hidden when the phone starts, and turns Telex in all apps back on if it was on."
+#define qtn_vnkey_note_skipped      "Telex in all apps was left off: the phone restarted while VnKey turned it on. Turn it on in the settings to try again."
+#define qtn_vnkey_note_sending      "Sending the log"
+#define qtn_vnkey_note_busy         "Still sending the log"
+#define qtn_vnkey_note_sent         "Log sent: %S"
+#define qtn_vnkey_note_not_sent     "Log not sent: error %d %S"
+#define qtn_vnkey_note_log_cleared  "Log cleared"
+
+// The end of the title while Telex in all apps is on ("VnKey [V] m3 all")
+#define qtn_vnkey_title_all         " all"

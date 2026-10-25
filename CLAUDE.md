@@ -85,6 +85,16 @@ update to 0.1.10) passed (log of 16:23): Off with No left the plugin on until th
 restart, the boot start then left it off, the installer closed VnKey and 0.1.10 started
 with the settings kept (`flags 319`), and Telex in all apps went on again.
 
+0.1.11 (2026-10-17, passed on the E72: Khoi, "it's OK"; log of 18:04), two things Khoi
+asked for: an app icon "with a modern look" (there was none: `number_of_icons = 0`), and
+VnKey's screens in Vietnamese or English, Vietnamese by default. The icon is
+`symbian/gfx/vnkey.svg`: a red rounded tile, a white key cap on it with a red V and a
+gold sắc mark (Vietnamese typing), chosen from four drafts rendered at 88 to 22 px. The
+language is the row Ngôn ngữ (Language) and `lang=` in `settings.txt`; it switches at
+once (see "Design"). On the phone: the update kept the settings and started in
+Vietnamese (`settings: ... lang 0`), Telex still typed in OttPilot, and the live switch
+to English worked (`language: en, error 0`); the SVG icon in the MIF shows.
+
 ## Requirements
 
 Decided by Khoi on 2026-10-16:
@@ -102,6 +112,8 @@ Decided by Khoi on 2026-10-16:
   2026-10-17).
 - VnKey's own screen is a settings screen, not a long menu of toggles, and VnKey starts by
   itself at boot (Khoi, 2026-10-17).
+- VnKey's screens in Vietnamese or English, Vietnamese by default, and an app icon with a
+  modern look (Khoi, 2026-10-17). The log stays in English.
 - Besides plain Telex: w alone types ư; a spell check that restores the keys of words
   that are not Vietnamese (class, email, window); typing shortcuts (gõ tắt, ko → không).
   VNI is not wanted.
@@ -230,7 +242,8 @@ The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM imple
   saves its own settings in `settings.txt` next to the log (`flags` = the shared encoding
   of the options, Vietnamese/English, the log key flag and the rewrite method; `place` the
   indicator place; `system` the Telex-in-all-apps preference; `boot` start at boot, 1 when
-  absent; `logserver` the web stub).
+  absent; `lang` the language of the screens, `vi` or `en`, Vietnamese when absent;
+  `logserver` the web stub).
   At start it loads them, publishes the shared state, and when `system` is on but the phone
   came back as AknFep it reinstalls the plugin once (`HandleChangeInLoadedFep`), so Telex in
   all apps survives a reboot as far as reopening VnKey. Same-boot it reads the live shared
@@ -253,12 +266,35 @@ The plugin (roadmap 2; `symbian/src/VnFepPlugIn.cpp`, `vnkeyfep.dll`, ECOM imple
   VnKey running: after `VnKey exit` the plugin went on in every application (0.1.7 log,
   `menu2` keys after the exit) and the shared state stays defined.
 - VnKey's own screens (0.1.9): `CVnSettingList` is the main screen, one row per option
-  (`TVnSettingId` in `VnKey.hrh`, rows and value texts in `vnkey.rss`); the selection key
-  toggles an on/off row or opens the page of a row with more values, Options > Change
-  opens any row's page. Non-ASCII letters in the resource are written as codes outside the
-  quotes (`"w alone types "<0x01b0>`; checked with rcomp: inside the quotes they stay
-  literal). Options > Typing test swaps in the editor of roadmap 1 (`CVnKeyAppView`;
-  softkeys Options/Back); only the screen in front is on the control stack.
+  (`TVnSettingId` in `VnKey.hrh`, rows in `vnkey.rss`, their texts in the `.loc`
+  files); the selection key toggles an on/off row or opens the page of a row with more
+  values, Options > Change opens any row's page. Options > Typing test swaps in the
+  editor of roadmap 1 (`CVnKeyAppView`; softkeys Options/Back); only the screen in front
+  is on the control stack.
+- The language of VnKey's screens (0.1.11). Every text VnKey shows is a `qtn_vnkey_...`
+  name in `data/vnkey_vi.loc` and `data/vnkey_en.loc` (UTF-8; `vnkey.rss` says
+  `CHARACTER_SET UTF8`, and rcomp then stores ữ as U+1EEF, checked 2026-10-17; without it
+  the bytes stay Latin-1). `vnkey.rss` is built twice: as `vnkey.rsc` with the Vietnamese
+  file, and through `vnkey_en.rss` (`#define VNKEY_LANG_EN`, then the same `vnkey.rss`) as
+  `vnkey_en.rsc`. Same NAME, same resources in the same order: same IDs (`vnkey.rsg`) and
+  the same offset. The framework loads `vnkey.rsc` at the start (no `.rNN` files, so
+  `NearestLanguageFile` keeps it); when `lang=en` is saved, `CVnKeyAppUi::UseLanguageL`
+  swaps it before the screens are made (`DeleteResourceFile` of the application's offset,
+  `AddResourceFileL` of the other file: the offset stays, so the application frees it at
+  the exit as it would the first). A change of the Language row saves first and swaps
+  after the list's `EditItemL` has returned (an async callback), then makes the screens
+  again: the softkeys, the title, and the settings list from the resource, on the same
+  row; the menu reads its texts each time it opens. The softkeys are VnKey's own CBA
+  resources with Avkon's command IDs (Avkon's would be in the phone's language), and the
+  setting pages and queries use them too. Still the phone's: the softkeys while the
+  Options menu is open, and the access point list of Send log. The log, the macros and
+  triggers samples stay in English.
+- The app icon (0.1.11): `gfx/vnkey.svg`, 88 x 88, into `vnkey_aif.mif` by `build.sh`
+  with GnuPoc's own `mifconv`, which puts the SVG text in as it is (no `svgtbinencode`, a
+  Windows tool not in the image); the S60 SVG engine reads SVG text. Only what SVG Tiny
+  1.1+ has: `rect` with `rx`, paths of lines, linear gradients in `userSpaceOnUse`; no
+  text, no arcs, no group opacity. `LOCALISABLE_APP_INFO` names it (`number_of_icons =
+  1`).
 
 ## Telex rules
 
@@ -301,6 +337,8 @@ As in OttPilot (`symbian/CLAUDE.md` there):
 - No non-ASCII characters in string literals (the compiler's source character set is
   not to be trusted): write `\x01B0` in a `_LIT`, and UTF-8 bytes as `\xC6\xB0` in a
   `_LIT8`, splitting the literal where a hex digit follows. Comments may have them.
+  Texts on VnKey's screens are not in the code at all: they go in both `.loc` files, in
+  UTF-8 (see "Design", the language).
 - The engine and anything that will go into the FEP plugin DLL must have no writable
   static data: tables are plain arrays of numbers or `char[N]`, never arrays of
   pointers. A `TVnMacros` (10 KB) never goes on the stack: applications that will load
@@ -338,8 +376,8 @@ The build runs in the SDK's Docker image `minhkhoi4dev/s60v3-sdk-docker:1.1.0`
 build number in `symbian/VERSION` and generates `symbian/inc/VnKeyVersion.h`
 (git-ignored); the version is in the log's first line and in the package. Commit
 `symbian/VERSION` with the change it was built for. `abld` says nothing useful when a
-file does not compile; `build.sh` stops when `vnkey.exe` or `vnkeyfep.dll` was not
-made. The plugin's DLL must have no `.data` or `.bss` (GnuPoc's `elf2e32` does not
+file does not compile; `build.sh` stops when `vnkey.exe`, `vnkeyfep.dll`, either
+resource file or the icon's `vnkey_aif.mif` was not made. The plugin's DLL must have no `.data` or `.bss` (GnuPoc's `elf2e32` does not
 check it; `readelf -S` on the objects in the image does). The signing keys
 `symbian/sis/dev.key` and `dev.cer` are made by the first build and never committed.
 

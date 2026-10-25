@@ -1,0 +1,79 @@
+// vnkey_vi.loc - the texts of VnKey's screens in Vietnamese (the default; vnkey.rsc).
+// UTF-8: vnkey.rss says CHARACTER_SET UTF8. Every text here is also in vnkey_en.loc, under
+// the same name and with the same %d / %S in the same order.
+
+// Softkeys
+#define qtn_vnkey_sk_options        "Tùy chọn"
+#define qtn_vnkey_sk_exit           "Thoát"
+#define qtn_vnkey_sk_back           "Trở về"
+#define qtn_vnkey_sk_ok             "OK"
+#define qtn_vnkey_sk_cancel         "Hủy"
+#define qtn_vnkey_sk_yes            "Có"
+#define qtn_vnkey_sk_no             "Không"
+
+// The Options menu
+#define qtn_vnkey_menu_change       "Thay đổi"
+#define qtn_vnkey_menu_typing       "Gõ thử"
+#define qtn_vnkey_menu_clear        "Xóa chữ"
+#define qtn_vnkey_menu_settings     "Cài đặt"
+#define qtn_vnkey_menu_reload       "Nạp lại gõ tắt, phím chuyển"
+#define qtn_vnkey_menu_send_log     "Gửi nhật ký"
+#define qtn_vnkey_menu_clear_log    "Xóa nhật ký"
+#define qtn_vnkey_menu_fep          "Kiểm tra FEP"
+#define qtn_vnkey_menu_fep_list     "1: liệt kê"
+#define qtn_vnkey_menu_fep_load     "2: nạp plugin"
+#define qtn_vnkey_menu_fep_create   "3: FEP thứ hai"
+#define qtn_vnkey_menu_exit         "Thoát"
+
+// The rows of the settings list
+#define qtn_vnkey_set_vietnamese    "Gõ tiếng Việt"
+#define qtn_vnkey_set_all_apps      "Telex mọi ứng dụng"
+#define qtn_vnkey_set_boot          "Chạy khi bật máy"
+#define qtn_vnkey_set_language      "Ngôn ngữ (Language)"
+#define qtn_vnkey_set_tone          "Kiểu bỏ dấu"
+#define qtn_vnkey_set_w_alone       "Gõ w thành ư"
+#define qtn_vnkey_set_spell         "Kiểm tra chính tả"
+#define qtn_vnkey_set_restore       "Khôi phục từ tiếng Anh"
+#define qtn_vnkey_set_macros        "Gõ tắt"
+#define qtn_vnkey_set_method        "Cách sửa từ"
+#define qtn_vnkey_set_place         "Chỗ hiện [V]/[E]"
+#define qtn_vnkey_set_log_keys      "Ghi mọi phím vào nhật ký"
+#define qtn_vnkey_set_server        "Máy nhận nhật ký"
+#define qtn_vnkey_set_none          "chưa có"
+
+// The values of the rows
+#define qtn_vnkey_on                "Bật"
+#define qtn_vnkey_off               "Tắt"
+#define qtn_vnkey_tone_modern       "Kiểu mới: hoà, thuý"
+#define qtn_vnkey_tone_old          "Kiểu cũ: hòa, thúy"
+#define qtn_vnkey_method_1          "1: sửa tại chỗ"
+#define qtn_vnkey_method_2          "2: xóa rồi sửa"
+#define qtn_vnkey_method_3          "3: gửi phím (mặc định)"
+#define qtn_vnkey_place_1           "1: thanh dưới"
+#define qtn_vnkey_place_2           "2: bên trái pin"
+#define qtn_vnkey_place_3           "3: thanh điều hướng"
+#define qtn_vnkey_place_4           "4: thanh tiêu đề"
+// Each language is named in itself, in both files.
+#define qtn_vnkey_lang_vietnamese   "Tiếng Việt"
+#define qtn_vnkey_lang_english      "English"
+
+// Queries
+#define qtn_vnkey_off_query         "Telex mọi ứng dụng sẽ tắt khi máy khởi động lại, đó là cách an toàn. Tắt luôn bây giờ? Máy có thể bị khởi động lại."
+#define qtn_vnkey_server_query      "Máy nhận nhật ký (địa chỉ:cổng)"
+
+// Notes
+#define qtn_vnkey_note_reloaded     "Đã nạp lại gõ tắt và phím chuyển"
+#define qtn_vnkey_note_all_on       "Telex mọi ứng dụng: bật."
+#define qtn_vnkey_note_all_off      "Telex mọi ứng dụng: tắt."
+#define qtn_vnkey_note_switch_error "Chưa chuyển được: lỗi %d. Xem nhật ký."
+#define qtn_vnkey_note_off_later    "Telex mọi ứng dụng vẫn bật cho đến khi máy khởi động lại."
+#define qtn_vnkey_note_boot_on      "VnKey sẽ chạy ẩn khi bật máy, và bật lại Telex mọi ứng dụng nếu trước đó đang bật."
+#define qtn_vnkey_note_skipped      "Telex mọi ứng dụng được để tắt: máy đã khởi động lại khi VnKey đang bật nó. Hãy bật lại trong cài đặt để thử lần nữa."
+#define qtn_vnkey_note_sending      "Đang gửi nhật ký"
+#define qtn_vnkey_note_busy         "Vẫn đang gửi nhật ký"
+#define qtn_vnkey_note_sent         "Đã gửi nhật ký: %S"
+#define qtn_vnkey_note_not_sent     "Chưa gửi được nhật ký: lỗi %d %S"
+#define qtn_vnkey_note_log_cleared  "Đã xóa nhật ký"
+
+// The end of the title while Telex in all apps is on ("VnKey [V] m3 tất cả")
+#define qtn_vnkey_title_all         " tất cả"

@@ -56,6 +56,18 @@ for bin in vnkey.exe vnkeyfep.dll vnkeyboot.exe; do
     fi
 done
 
+# The icon: gfx/vnkey.svg as it is into a MIF. GnuPoc's own mifconv puts the SVG text in
+# (no svgtbinencode, a Windows tool); the phone's SVG engine reads SVG text as well.
+mifconv "${EPOCROOT}epoc32/data/z/resource/apps/vnkey_aif.mif" ../gfx/vnkey.svg
+# abld goes on when a resource file does not compile either
+for res in vnkey.rsc vnkey_en.rsc vnkey_aif.mif; do
+    path="${EPOCROOT}epoc32/data/z/resource/apps/$res"
+    if [ ! -f "$path" ] || [ "$path" -ot ../data/vnkey.rss ]; then
+        echo "build.sh: $path was not made, see the errors above" >&2
+        exit 1
+    fi
+done
+
 cd ../sis
 sed -e "s#\$(EPOCROOT)#${EPOCROOT}#g" \
     -e "s#@VERSION_MAJOR@#${V_MAJOR}#g" \
