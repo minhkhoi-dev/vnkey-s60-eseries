@@ -207,6 +207,7 @@ TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode a
         {
         case EEventKeyDown:
             // AknFep has finished with the key before; it may type this one at once
+            KeepCase(editor, ETrue);
             Flush();
             Snapshot(editor, aKeyEvent.iScanCode);
             return EKeyWasNotConsumed;
@@ -225,6 +226,7 @@ TKeyResponse CVnCatcher::OfferKeyEventL(const TKeyEvent& aKeyEvent, TEventCode a
         }
 
     Flush();
+    KeepCase(editor, EFalse);
     if (iTriggers.Matches(aKeyEvent.iModifiers, aKeyEvent.iScanCode))
         {
         SetVietnamese(!iVietnamese);
@@ -485,6 +487,19 @@ void CVnCatcher::ReplaceL(MCoeFepAwareTextEditor& aEditor, TInt aStart, TInt aEn
         }
     const TInt from = aStart + common;
     const TPtrC added(aText.Mid(common));
+    // The backspaces can take the cursor back to the start of a sentence, and AknFep then
+    // sets the capital again; the retyped letters do not take it off (Ddang -> ĐAng,
+    // Oom -> ÔM, 2026-10-25). The case from before the rewrite is put back at the
+    // next key (KeepCase).
+    iCaseKeep = EFalse;
+    CAknEdwinState* state = EditorState(aEditor);
+    if (state)
+        {
+        iCaseKeep = ETrue;
+        iCase = state->CurrentCase();
+        iCaseEditor = &aEditor;
+        iCasePos = aStart + aText.Length();
+        }
     iBusy = ETrue;
     TInt err = KErrNone;
     switch (iMethod)
@@ -511,6 +526,49 @@ void CVnCatcher::ReplaceL(MCoeFepAwareTextEditor& aEditor, TInt aStart, TInt aEn
     Log(_L("rewrite %d: %S -> %S %S (err %d, got %S, cur %d)"), iMethod, &old, &aText,
         ok ? &KOk : &KBad, err, &got, sel.iCursorPos);
     User::LeaveIfError(err);
+    }
+
+CAknEdwinState* CVnCatcher::EditorState(MCoeFepAwareTextEditor& aEditor)
+    {
+    MCoeFepAwareTextEditor_Extension1* ext = aEditor.Extension1();
+    return ext ? static_cast<CAknEdwinState*>(ext->State(KNullUid)) : NULL;
+    }
+
+// After a rewrite, before AknFep takes the next key: when the cursor is still right after
+// the rewritten text, AknFep's case goes back to what it was before the rewrite. At a key
+// down (aFinal) the rewrite's own keys have all reached the editor, so a cursor elsewhere
+// means it moved and the case is left to AknFep.
+void CVnCatcher::KeepCase(MCoeFepAwareTextEditor* aEditor, TBool aFinal)
+    {
+    if (!iCaseKeep)
+        {
+        return;
+        }
+    if (!aEditor || aEditor != iCaseEditor)
+        {
+        iCaseKeep = EFalse;
+        return;
+        }
+    TCursorSelection sel;
+    aEditor->GetCursorSelectionForFep(sel);
+    if (sel.Length() != 0 || sel.iCursorPos != iCasePos)
+        {
+        if (aFinal)
+            {
+            iCaseKeep = EFalse;
+            }
+        return;
+        }
+    iCaseKeep = EFalse;
+    CAknEdwinState* state = EditorState(*aEditor);
+    if (!state || state->CurrentCase() == iCase)
+        {
+        return;
+        }
+    const TInt was = state->CurrentCase();
+    state->SetCurrentCase(iCase);
+    TRAPD(err, state->ReportAknEdStateEventL(MAknEdStateObserver::EAknEdwinStateCaseModeUpdate));
+    Log(_L("case: %x back to %x (err %d)"), was, iCase, err);
     }
 
 // aText typed at aPos as an inline edit, committed at once.
