@@ -95,7 +95,7 @@ once (see "Design"). On the phone: the update kept the settings and started in
 Vietnamese (`settings: ... lang 0`), Telex still typed in OttPilot, and the live switch
 to English worked (`language: en, error 0`); the SVG icon in the MIF shows.
 
-2026-10-25 (not yet built nor run on the E72): at a sentence's start the second letter came
+0.1.12 (2026-10-26, passed on the E72: Khoi, "no more errors"): at a sentence's start the second letter came
 out capital (Khoi: Ddang -> ĐAng, Oom -> ÔM). The rewrite's backspaces (methods 2 and 3) take
 the cursor back to the sentence's start, AknFep sets the capital again, and the retyped
 letter does not take it off. `CVnCatcher::ReplaceL` now notes AknFep's case
