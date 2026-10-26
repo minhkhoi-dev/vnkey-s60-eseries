@@ -9,6 +9,7 @@
 #include "VnIndicator.h"
 
 class MCoeFepAwareTextEditor;
+class CAknEdwinState;
 
 // What the catcher tells its owner.
 class MVnCatcherObserver
@@ -85,6 +86,8 @@ private:
     void Flush();
     void FlushL();
     void ReplaceL(MCoeFepAwareTextEditor& aEditor, TInt aStart, TInt aEnd, const TDesC& aText);
+    static CAknEdwinState* EditorState(MCoeFepAwareTextEditor& aEditor);
+    void KeepCase(MCoeFepAwareTextEditor* aEditor, TBool aFinal);
     void InlineL(MCoeFepAwareTextEditor& aEditor, TInt aPos, const TDesC& aText);
     void SimulateL(TInt aBackspaces, const TDesC& aText);
     void Log(TRefByValue<const TDesC> aFmt, ...);
@@ -130,6 +133,10 @@ private:
     MCoeFepAwareTextEditor* iInlineEditor;  // during an inline edit, for its format
     TInt iInlinePos;
     TInt iInlineLength;
+    TBool iCaseKeep;                // after a rewrite: AknFep's case to put back (KeepCase)
+    TInt iCase;
+    MCoeFepAwareTextEditor* iCaseEditor;    // not owned; only compared
+    TInt iCasePos;                  // the cursor right after the rewritten text
     };
 
 #endif // VNCATCHER_H
